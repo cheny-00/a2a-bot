@@ -1,0 +1,16 @@
+.DS_Store
+*.ipynb
+*.csv
+.idea/
+.ipynb*/
+*.log
+.vscode/
+__pycache__/
+tmp*
+tmp*/
+*png
+log/
+local*
+local*/
+checkpoint/
+.idea/
