@@ -1,0 +1,11 @@
+
+model_layers = 8
+max_seq_length = 2048
+[model_config]
+
+
+[token_config]
+text_vocab_size = 151936
+audio_vocab_size = 4096
+text_special_tokens = 64
+audio_special_tokens = 64

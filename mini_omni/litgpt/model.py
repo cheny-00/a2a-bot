@@ -12,7 +12,7 @@ from typing import Any, Optional, Tuple
 import torch
 import torch.nn as nn
 from typing_extensions import Self
-from litgpt.config import Config
+from mini_omni.litgpt.config import Config
 
 
 class GPT(nn.Module):
