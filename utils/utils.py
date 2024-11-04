@@ -51,3 +51,17 @@ def instantiate_torch_optimizer(optimizer, model_parameters, **kwargs):
         raise ValueError(f'Unrecognized "optimizer" value: {optimizer}')
 
     return optimizer
+
+def get_group_parameters(args, group_name):
+    grouped_params = {}
+    pop_list = list()
+    for key, value in vars(args).items():
+        if not key.startswith(group_name) or value is None:
+            continue
+        grouped_params[key[len(group_name) :]] = value
+        pop_list.append(key)
+    for key in pop_list:
+        args.__dict__.pop(key)
+    return grouped_params
+
+

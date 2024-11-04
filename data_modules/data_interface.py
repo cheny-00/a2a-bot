@@ -14,7 +14,7 @@ from torch.utils.data.sampler import WeightedRandomSampler
 from utils.utils import get_mapped_kwargs
 
 
-class DInterface(pl.LightningDataModule):
+class DataInterface(pl.LightningDataModule):
     def __init__(self, num_workers=8, dataset="", batch_size=4, **kwargs):
         super().__init__()
         self.num_workers = num_workers
@@ -96,3 +96,4 @@ class DInterface(pl.LightningDataModule):
             raise ValueError(
                 f"Invalid Module File Name or Invalid Class Name {name}.{camel_name}!"
             )
+

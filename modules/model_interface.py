@@ -38,18 +38,22 @@ class ModelInterface(pl.LightningModule):
             train_func_name,
             valid_func_name,
             task,
-            train_config,
+            config,
             **kwargs
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model", "config"])
 
         self.task = task
+        self.config = config
+        
+        self.loss_function = {}
 
         self.model = self.prepare_model()
+        self.configure_loss()
 
         self.__set_self_function__("training_step", train_funcs, train_func_name)
-        self.__set_self_function__("validation_step", valid_funcs, valid_func_name)
+        # self.__set_self_function__("validation_step", valid_funcs, valid_func_name)
 
 
     def __set_self_function__(self, self_func_name, source, func_name):
@@ -61,29 +65,31 @@ class ModelInterface(pl.LightningModule):
         return self.model(*args, **kwargs)
 
 
-    def get_scheduler(self, scheduler_name):
+    def get_scheduler(self, optimizer, scheduler_name):
         def lr_lambda(epoch):
             """ This lambda function encapsulates your custom learning rate logic. """
             return schedulers.litgpt_get_lr(
-                learning_rate=self.hparams.learning_rate,
+                learning_rate=self.hparams.lr,
                 it=epoch,
                 warmup_iters=self.hparams.warmup_iters,
                 max_iters=self.hparams.max_iters,
                 min_lr=self.hparams.min_lr
             )
 
-        scheduler_function = lr_lambda
+        scheduler_function = lrs.LambdaLR(optimizer, lr_lambda)
 
 
         return scheduler_function
 
 
 
-    def configure_optimizers(self) -> OptimizerLRScheduler:
+    def configure_optimizers(self):
         optimizer_name = self.hparams.optimizer_name
-        optimizer_params = self.config[optimizer_name]
+        optimizer_params = self.config.get(optimizer_name, {})
+        print("Optimizer params:", optimizer_params)
+        optimizer_params["lr"] = self.hparams.lr
         optimizer = instantiate_torch_optimizer(optimizer_name, self.parameters(), **optimizer_params)
-        scheduler = self.get_scheduler(self.hparams.scheduler_name)
+        scheduler = self.get_scheduler(optimizer, self.hparams.scheduler_name)
 
 
         return {

@@ -4,6 +4,7 @@
 
 
 import torch
+import whisper
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -20,12 +21,19 @@ from utils.data_utils import (
 
 
 
-class ASRDataset(Dataset):
-    def __init__(self, data_path: AnyStr, whisper_model, tokenizer, config: Dict):
-        data_path = Path(data_path)
-        assert data_path.exists(), f"{data_path} NOT EXISTS!"
+class AsrDataset(Dataset):
+    def __init__(
+        self,
+        data_dir: AnyStr,
+        whisper_model,
+        tokenizer,
+        config: Dict,
+        train=True,
+    ):
+        data_dir = Path(data_dir)
+        assert data_dir.exists(), f"{data_dir} NOT EXISTS!"
 
-        self.data = self._load_data(data_path)
+        self.data = self._load_data(data_dir)
         self.whisper_model = whisper_model
         self.tokenizer = tokenizer
         self.max_seq_length = config["max_seq_length"]
@@ -69,8 +77,8 @@ class ASRDataset(Dataset):
     def __getitem__(self, item):
         data = self.data.iloc[item]
 
-        input_ids = get_input_template(self.config["token_config"], self.max_seq_length, self.model_layers)
-        audio_feature, audio_length = self._get_audio_embeddings(data['audio_info'])
+        input_ids = get_input_template(self.config["token_config"], self.max_seq_length - 3, self.model_layers)
+        audio_feature, audio_length = self._get_audio_embeddings(data['question_audio']["bytes"])
 
         audio_feature = pad_to_max_length(audio_feature, self.max_seq_length)
         audio_feature = audio_feature.squeeze(0)
@@ -79,7 +87,7 @@ class ASRDataset(Dataset):
         text_tokens = self.tokenizer.encode(data['question'])
         padded_text_token = self._pad_token(text_tokens, max_length=self.max_seq_length, pad_value=self.config["token_config"]["pad_t"])
         features['text_length'] = text_tokens.size(0)
-        features['text'] = torch.tensor(padded_text_token, dtype=torch.long)
+        features['text'] = padded_text_token.to(torch.long)
         features['audio_feature'] = audio_feature
         features['input_ids'] = input_ids
         features['audio_length'] = audio_length
