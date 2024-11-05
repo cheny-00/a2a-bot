@@ -22,6 +22,29 @@ from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from pathlib import Path
 
 
+def load_callbacks(model_name, version):
+    callbacks = list()
+    # callbacks.append(
+    #     plc.EarlyStopping(
+    #         monitor="valid_acc_epoch", mode="max", patience=10, min_delta=0.001
+    #     )
+    # )
+
+    callbacks.append(
+        plc.ModelCheckpoint(
+            monitor="valid_acc_epoch",
+            # dirpath=f"checkpoints/{model_name}/version_{version}",
+            filename="best-{epoch}-{valid_acc_epoch:.3f}-{valid_loss_epoch:.2f}",
+            save_top_k=1,
+            mode="max",
+            save_last=True,
+        )
+    )
+
+    # if args.lr_scheduler:
+    #     callbacks.append(plc.LearningRateMonitor(logging_interval="epoch"))
+    return callbacks
+
 
 
 def main(args):
@@ -51,8 +74,8 @@ def main(args):
     )
     
     logger = TensorBoardLogger(save_dir=args.log_dir, name=args.model_name)
-    
-    args.logger = logger
+    args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version)
+    args.pl_trainer_params["logger"] = logger
     
     trainer = Trainer(**args.pl_trainer_params)
     trainer.fit(model, data_module)

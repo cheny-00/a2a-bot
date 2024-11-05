@@ -42,15 +42,19 @@ class ModelInterface(pl.LightningModule):
             **kwargs
     ):
         super().__init__()
-        self.save_hyperparameters(ignore=["model", "config"])
+        self.save_hyperparameters(ignore=["model", "config", "tokenizer", "snac_model"])
 
         self.task = task
         self.config = config
+        self.metrics = None
+        self.total_text_vocab_size = self.config["token_config"]["padded_text_vocab_size"]
         
         self.loss_function = {}
+        
 
         self.model = self.prepare_model()
         self.configure_loss()
+        self.configure_metrics()
 
         self.__set_self_function__("training_step", train_funcs, train_func_name)
         # self.__set_self_function__("validation_step", valid_funcs, valid_func_name)
@@ -101,10 +105,49 @@ class ModelInterface(pl.LightningModule):
             }
         }
 
+    
+    def get_metrics(self, is_train=False):
+        prefix = "train" if is_train else "val"
+        for metric_name in self.metrics:
+            if not metric_name.startswith(prefix):
+                continue
+            _score = self.__getattr__(metric_name).compute()
+            print(f"\n {metric_name}: {_score}")
+            self.log(f"{prefix}_{metric_name}_epoch", _score, prog_bar=False)
+            self.__getattr__(metric_name).reset()
 
 
     def on_train_epoch_end(self):
-        ...
+        
+        # Make the Progress Bar leave there
+        self.print("")
+        if self.train_metrics is None:
+            return
+        self.get_metrics(is_train=True)
+
+
+    def on_validation_epoch_end(self):
+        # Make the Progress Bar leave there
+        self.print("")
+        if self.val_metrics is None:
+            return
+        self.get_metrics(is_train=False)
+    
+    
+    def initialize_metrics(self, metrics):
+        for metric_name in metrics:
+            if metric_name.endswith("_acc"):
+                metric = torchmetrics.Accuracy(task="multiclass", num_classes=self.total_text_vocab_size)
+            self.__setattr__(metric_name, metric)
+    
+    
+    def configure_metrics(self):
+        task = self.task
+        # if task == "stage_1":
+        #     self.metrics = ["train_text_acc", "val_text_acc"]
+        #     self.initialize_metrics(self.metrics)
+        
+        
 
     def configure_loss(self):
         loss_func_name = self.hparams.loss_fn_name
@@ -137,7 +180,7 @@ class ModelInterface(pl.LightningModule):
 
     def _model_state(self, model, task):
         if task == "stage_1":
-            self._freeze_the_layer(model.transformer.wta)
+            self._freeze_the_layer(model.transformer.wte)
             self._freeze_the_layer(model.transformer.h)
             self._freeze_the_layer(model.transformer.ln_f)
         elif task == "stage_2":
@@ -151,11 +194,9 @@ class ModelInterface(pl.LightningModule):
         model_name = self.hparams.model_name
         model_config = self.config[model_name]
         model = GPT(model_config)
-        self._model_state(model, self.hparams.task)
+        self._model_state(model, self.task)
 
         return model
-
-
 
 
 

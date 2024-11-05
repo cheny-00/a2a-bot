@@ -12,3 +12,9 @@ text_vocab_size = 151936
 audio_vocab_size = 4096
 text_special_tokens = 64
 audio_special_tokens = 64
+
+
+[task_mapping]
+stage_1 = "asr"
+stage_2 = "AT"
+stage_3 = "A1A2"

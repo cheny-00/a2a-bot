@@ -71,6 +71,7 @@ class DataInterface(pl.LightningDataModule):
             batch_size=self.test_batch_size,
             num_workers=self.num_workers,
             shuffle=False,
+            persistent_workers=self.num_workers > 0,
         )
 
     def test_dataloader(self):
@@ -79,6 +80,7 @@ class DataInterface(pl.LightningDataModule):
             batch_size=self.test_batch_size,
             num_workers=self.num_workers,
             shuffle=False,
+            persistent_workers=self.num_workers > 0,
         )
 
     def load_data_module(self):

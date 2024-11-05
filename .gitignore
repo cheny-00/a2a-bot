@@ -4,6 +4,7 @@
 .idea/
 .ipynb*/
 *.log
+.logs/
 .vscode/
 __pycache__/
 tmp*

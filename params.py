@@ -67,10 +67,10 @@ def get_args():
     train_config = parser.add_argument_group("train config", "train config")
 
     ## task & functions
-    train_config.add_argument("--task", type=str, default="asr", dest="train_config_task")
+    train_config.add_argument("--task", type=str, default="stage_1", dest="train_config_task")
     train_config.add_argument("--train_func_name", type=str, default="omni_stage_1_training",
                               dest="train_config_train_func_name")
-    train_config.add_argument("--valid_func_name", type=str, default="validation_step",
+    train_config.add_argument("--valid_func_name", type=str, default="omni_stage_1_validation",
                               dest="train_config_valid_func_name")
     train_config.add_argument("--loss_fn_name", type=str, default="xnet", dest="train_config_loss_fn_name")
 
