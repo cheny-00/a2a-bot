@@ -36,11 +36,12 @@ class DataInterface(pl.LightningDataModule):
             if self.kwargs["valid_data_dir"] == "random":
                 indices = list(range(len(self.train_set)))
                 random.shuffle(indices)
-                split_rate = int(0.9 * len(self.train_set))
+                split_rate = int(0.9 * len(self.train_set)) 
+                print(split_rate, len(self.train_set))
                 train_indices = indices[:split_rate]
-                val_indices = indices[:split_rate]
-                self.train_set = Subset(self.train_set, train_indices)
+                val_indices = indices[split_rate:]
                 self.val_set = Subset(self.train_set, val_indices)
+                self.train_set = Subset(self.train_set, train_indices)
             else:
                 self.val_set = self.data_module(
                     data_dir=self.kwargs["valid_data_dir"],

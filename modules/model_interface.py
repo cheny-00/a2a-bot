@@ -57,7 +57,7 @@ class ModelInterface(pl.LightningModule):
         self.configure_metrics()
 
         self.__set_self_function__("training_step", train_funcs, train_func_name)
-        # self.__set_self_function__("validation_step", valid_funcs, valid_func_name)
+        self.__set_self_function__("validation_step", valid_funcs, valid_func_name)
 
 
     def __set_self_function__(self, self_func_name, source, func_name):
@@ -121,7 +121,7 @@ class ModelInterface(pl.LightningModule):
         
         # Make the Progress Bar leave there
         self.print("")
-        if self.train_metrics is None:
+        if self.metrics is None:
             return
         self.get_metrics(is_train=True)
 
@@ -129,7 +129,7 @@ class ModelInterface(pl.LightningModule):
     def on_validation_epoch_end(self):
         # Make the Progress Bar leave there
         self.print("")
-        if self.val_metrics is None:
+        if self.metrics is None:
             return
         self.get_metrics(is_train=False)
     
