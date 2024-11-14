@@ -51,6 +51,58 @@ def get_input_template(token_config, seq_length, model_layers=8):
     return input_ids
 
 
+def get_audio_template(token_config, max_seq_length=None, model_layers=8):
+    input_ids = []
+    # First model_layers-1 layers use audio padding tokens with layershift
+    for i in range(model_layers - 1):
+        audio_pad_token = layershift(token_config["pad_a"], i)
+        pad_tokens = [audio_pad_token] * max_seq_length
+        input_ids.append(torch.tensor(pad_tokens))
+    return input_ids
+
+def pad_text_tokens(token_config, tokens, max_seq_length):
+    
+    text_tokens = torch.cat([
+        torch.tensor([token_config["input_t"]], dtype=torch.long),
+        tokens,
+        torch.tensor([token_config["pad_t"]] * (max_seq_length - len(tokens) - 3), dtype=torch.long),
+        torch.tensor([token_config["eot"], token_config["answer_t"]], dtype=torch.long),
+    ])
+    return text_tokens
+
+
+
+
+def get_text_input(tokens: torch.Tensor, token_config, max_seq_length=None, model_layers=8):
+    """
+    Generate input IDs for text tokens across model layers.
+    
+    Args:
+        tokens (torch.Tensor): Text tokens to process
+        token_config (dict): Configuration dictionary containing token mappings
+        max_seq_length (int): Maximum sequence length
+        model_layers (int): Number of model layers (default=8)
+    
+    Returns:
+        list: List of tensor inputs for each layer
+    """
+    input_ids = []
+    seq_length = len(tokens) if max_seq_length is None else max_seq_length
+    # First model_layers-1 layers use audio padding tokens with layershift
+    for i in range(model_layers - 1):
+        audio_pad_token = layershift(token_config["pad_a"], i)
+        pad_tokens = [audio_pad_token] * (seq_length + 3)
+        input_ids.append(torch.tensor(pad_tokens))
+    
+    # Last layer contains actual text tokens
+    text_tokens = torch.cat([
+        torch.tensor([token_config["input_t"]], dtype=torch.long),
+        tokens,
+        torch.tensor([token_config["pad_t"]] * (seq_length - len(tokens)), dtype=torch.long),
+        torch.tensor([token_config["eot"], token_config["answer_t"]], dtype=torch.long)
+    ])
+    input_ids.append(text_tokens)
+    return input_ids
 
 
 def pad_to_max_length(input_tensor, max_seq_length, pad_value=0):

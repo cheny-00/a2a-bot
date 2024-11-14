@@ -5,6 +5,7 @@
 import torch
 from mini_omni.litgpt.generate.base import sample
 import pytorch_lightning as pl
+from modules.loss_functions import text_mask_cross_entropy
 
 
 def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
@@ -30,3 +31,26 @@ def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
         self.log("train_text_acc", text_acc, on_step=True, on_epoch=True, prog_bar=True)
 
     return loss
+
+
+def omni_stage_2_training(self: pl.LightningModule, batch, batch_idx):
+    question_audio_feature = batch['question_audio_feature']
+    question_audio_length = batch['question_audio_length']
+    input_ids = batch['input_ids']
+    answer_token = batch['answer_token']
+    answer_token_length = batch['answer_token_length']
+    
+    max_length = answer_token.size(1)  # T (max sequence length)
+    text_indices = torch.arange(max_length, device=answer_token.device).unsqueeze(0)  # [1, T]
+    text_mask = text_indices < answer_token_length.unsqueeze(1)
+    
+    _, logit_t = self(question_audio_feature, input_ids, whisper_lens=question_audio_length, task='AT')
+    # logit_a = torch.stack(logit_a)
+    # TODO: add loss function
+    # logit_a shape: (batch_size, 7, seq_length, vocab_size)
+    # logit_t shape: (batch_size, seq_length, vocab_size)   
+    text_loss = text_mask_cross_entropy(logit_t, answer_token, text_mask)
+    self.log("text_loss", text_loss, on_step=True, on_epoch=True, prog_bar=True)
+
+    return text_loss
+    

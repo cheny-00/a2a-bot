@@ -41,8 +41,8 @@ class AsrDataset(Dataset):
         self.model_layers = config["model_layers"]
 
     @staticmethod
-    def _load_data(data_path):
-        df = pd.read_parquet(data_path)
+    def _load_data(data_dir):
+        df = pd.read_parquet(data_dir)
         return df
 
     @staticmethod

@@ -151,8 +151,10 @@ class ModelInterface(pl.LightningModule):
 
     def configure_loss(self):
         loss_func_name = self.hparams.loss_fn_name
+        if loss_func_name is None or loss_func_name == "":
+            return
         if isinstance(loss_func_name, str):
-            loss_func_name = [loss_func_name]
+            loss_func_name = loss_func_name.split(",")
 
         for _loss_func_name in loss_func_name:
             _loss_func_name = _loss_func_name.lower()
@@ -179,15 +181,17 @@ class ModelInterface(pl.LightningModule):
 
 
     def _model_state(self, model, task):
+        post_adapter_available = self.config[self.hparams.model_name].post_adapter
         if task == "stage_1":
             self._freeze_the_layer(model.transformer.wte)
             self._freeze_the_layer(model.transformer.h)
             self._freeze_the_layer(model.transformer.ln_f)
         elif task == "stage_2":
             self._freeze_the_layer(model.whisper_adapter)
-            self._freeze_the_layer(model.transformer.post_adapter)
-            self._freeze_the_layer(model.transformer.post_audio_adapter_ln)
-            self._freeze_the_layer(model.transformer.post_audio_adapter_lm_head)
+            if post_adapter_available:
+                self._freeze_the_layer(model.transformer.post_adapter)
+                self._freeze_the_layer(model.transformer.post_audio_adapter_ln)
+                self._freeze_the_layer(model.transformer.post_audio_adapter_lm_head)
         # stage 3 no need freeze
 
     def prepare_model(self):

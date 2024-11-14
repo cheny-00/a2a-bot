@@ -78,7 +78,7 @@ class Config:
     audio_vocab_size: int = 4160
     whisper_adapter_dim: int = 768
 
-    post_adapter: bool = False
+    post_adapter: bool = True
     post_adapter_layers: int = 6
     asr_adapter: str = "llamamlp"
 
