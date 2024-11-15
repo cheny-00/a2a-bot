@@ -79,7 +79,7 @@ class TextQaDataset(Dataset):
         features["question_audio_length"] = question_audio_length
         
         # features["question_text"] = question_tokens.to(torch.long)
-        features["question_token_length"] = question_tokens.size(0)
+        features["question_token_length"] = question_token_length
         features["answer_token"] = answer_tokens.to(torch.long)
         features["answer_token_length"] = anwser_token_length
         

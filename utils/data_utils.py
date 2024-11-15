@@ -5,6 +5,7 @@
 import torch
 import whisper
 import numpy as np
+import typing as tp
 import torch.nn.functional as F
 
 from mini_omni.snac_utils.snac_utils import layershift
@@ -138,3 +139,37 @@ def pad_to_max_length(input_tensor, max_seq_length, pad_value=0):
         padded_tensor = input_tensor
 
     return padded_tensor
+
+
+def construct_snac_tokens(snac: tp.AnyStr, layers=7) -> tp.Tuple[tp.List[tp.List[tp.AnyStr]], int]:
+    
+    snac_layers = snac.split("#")
+    snac_tokens = [[] for _ in range(layers)]
+    n_layers = 0
+    for _layer in snac_layers:
+        if _layer == "":
+            continue
+        tokens = _layer.strip().split(" ")
+        for i, token in enumerate(tokens):
+            snac_tokens[i].append(token)
+        n_layers += 1
+    return snac_tokens, n_layers
+        
+def pad_snac_tokens(token_config, snac_tokens, max_seq_length):
+    
+    padded_snac_tokens = list()
+    pad_a = token_config["pad_a"]
+    eoa = token_config["eoa"]
+    padding_mask = list()
+    for i, tokens in enumerate(snac_tokens):
+        padded_token = [pad_a] * (i + 1) + tokens + [eoa]
+        _mask = [0] * (i + 1) + [1] * len(tokens) + [1]
+        padded_token = padded_token + [pad_a] * (max_seq_length - len(padded_token))
+        _mask = _mask + [0] * (max_seq_length - len(_mask))
+        padded_snac_tokens.append(padded_token)
+        padding_mask.append(_mask)
+        assert len(padded_token) == max_seq_length == len(_mask), "padded_token and padding_mask should have the same length"
+        
+    return padded_snac_tokens, padding_mask
+    
+    
