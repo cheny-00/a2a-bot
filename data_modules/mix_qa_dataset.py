@@ -45,6 +45,11 @@ class MixQaDataset(Dataset):
     def _load_data(data_dir):
         df = pd.read_parquet(data_dir)
         return df
+    
+    def _get_audio_embeddings(self, audio_info):
+        mel, leng = load_audio_from_bytes(audio_info)
+        audio_feature = get_whisper_embeddings(self.whisper_model, mel)
+        return audio_feature, leng
         
     def __getitem__(self, item):
         
@@ -54,7 +59,7 @@ class MixQaDataset(Dataset):
         
         answer_snac = data["answer_snac"]
         answer_snac_tokens, _ = construct_snac_tokens(answer_snac)
-        answer_snac_tokens, answer_padding_mask = pad_snac_tokens(self.config, answer_snac_tokens, self.max_seq_length)
+        answer_snac_tokens, answer_padding_mask = pad_snac_tokens(self.config["token_config"], answer_snac_tokens, self.max_seq_length)
         
         
         
@@ -75,14 +80,14 @@ class MixQaDataset(Dataset):
         
         features = dict()
         
-        features["answer_snac_tokens"] = answer_snac_tokens
-        features["answer_padding_mask"] = answer_padding_mask
+        features["answer_snac_tokens"] = torch.tensor(answer_snac_tokens, dtype=torch.long)
+        features["answer_padding_mask"] = torch.tensor(answer_padding_mask, dtype=torch.bool)
         
         features["question_audio_feature"] = question_audio_feature
         features["question_audio_length"] = question_audio_length   
         
         # features["question_tokens"] = question_tokens.to(torch.long)
-        features["answer_tokens"] = answer_tokens.to(torch.long)
+        features["answer_token"] = answer_tokens.to(torch.long)
         features["answer_token_length"] = answer_token_length
         
         

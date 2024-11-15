@@ -199,6 +199,7 @@ class GPT(nn.Module):
             xa = []
             for i in range(7):
                 xa.append(x_ori[..., text_vocab_size + audio_vocab_size * i : text_vocab_size + audio_vocab_size * (i + 1)])
+        xa = torch.stack(xa, dim=1)
 
         return xa, xt
 

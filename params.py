@@ -68,9 +68,9 @@ def get_args():
 
     ## task & functions
     train_config.add_argument("--task", type=str, default="stage_1", dest="train_config_task")
-    train_config.add_argument("--train_func_name", type=str, default="omni_stage_2_training",
+    train_config.add_argument("--train_func_name", type=str, default="omni_stage_3_training",
                               dest="train_config_train_func_name")
-    train_config.add_argument("--valid_func_name", type=str, default="omni_stage_2_validation",
+    train_config.add_argument("--valid_func_name", type=str, default="omni_stage_3_validation",
                               dest="train_config_valid_func_name")
     train_config.add_argument("--loss_fn_name", type=str, default="", dest="train_config_loss_fn_name")
 

@@ -65,11 +65,12 @@ def omni_stage_3_training(self: pl.LightningModule, batch, batch_idx):
     text_indices = torch.arange(max_length, device=answer_token.device).unsqueeze(0)  # [1, T]
     text_mask = text_indices < answer_token_length.unsqueeze(1)
     
-    audio_mask = torch.ones_like(text_mask, dtype=torch.bool)
+    answer_snac_tokens = batch['answer_snac_tokens']
+    answer_padding_mask = batch['answer_padding_mask']
     
     logit_a, logit_t = self(question_audio_feature, input_ids, whisper_lens=question_audio_length, task='AT')
     text_loss = text_mask_cross_entropy(logit_t, answer_token, text_mask)
-    audio_loss = audio_mask_cross_entropy(logit_a, answer_token, audio_mask)
+    audio_loss, _ = audio_mask_cross_entropy(logit_a, answer_snac_tokens, answer_padding_mask)
     
     alpha = 0.5
     loss = alpha * text_loss + (1 - alpha) * audio_loss

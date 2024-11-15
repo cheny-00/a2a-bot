@@ -151,11 +151,11 @@ def construct_snac_tokens(snac: tp.AnyStr, layers=7) -> tp.Tuple[tp.List[tp.List
             continue
         tokens = _layer.strip().split(" ")
         for i, token in enumerate(tokens):
-            snac_tokens[i].append(token)
+            snac_tokens[i].append(int(token))
         n_layers += 1
     return snac_tokens, n_layers
         
-def pad_snac_tokens(token_config, snac_tokens, max_seq_length):
+def pad_snac_tokens(token_config: tp.Dict, snac_tokens: tp.List[tp.List[int]], max_seq_length: int):
     
     padded_snac_tokens = list()
     pad_a = token_config["pad_a"]
