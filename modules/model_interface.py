@@ -182,6 +182,13 @@ class ModelInterface(pl.LightningModule):
                 loss_params = get_mapped_kwargs(loss_class.__init__, self.kwargs)
                 loss_func = loss_class(**loss_params).to(self.device)
                 self.loss_function[_loss_func_name] = loss_func
+    
+    def configure_gradient_clipping(self, optimizer: lrs.Optimizer, gradient_clip_val: int | float | None = None, gradient_clip_algorithm: str | None = None) -> None:
+        if "gradient_clip_val" in self.hparams:
+            gradient_clip_val = self.hparams.gradient_clip_val
+        if "gradient_clip_algorithm" in self.hparams:
+            gradient_clip_algorithm = self.hparams.gradient_clip_algorithm
+        self.clip_gradients(optimizer, gradient_clip_val, gradient_clip_algorithm)
 
     @staticmethod
     def _freeze_the_layer(layer):

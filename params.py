@@ -66,6 +66,9 @@ def get_args():
     pl_trainer_config.add_argument("--accelerator", type=str, default="auto", dest="pl_trainer_accelerator")
     # pl_trainer_config.add_argument("--strategy", type=str, default="ddp", dest="pl_trainer_strategy")
     pl_trainer_config.add_argument("--devices", type=str, default="auto", dest="pl_trainer_devices")
+    ## gradient clip
+    pl_trainer_config.add_argument("--gradient_clip_val", type=float, default=1.0, dest="pl_trainer_gradient_clip_val")
+    pl_trainer_config.add_argument("--gradient_clip_algorithm", type=str, default="norm", dest="pl_trainer_gradient_clip_algorithm")
 
     # data config
     data_config = parser.add_argument_group("data config", "data config")

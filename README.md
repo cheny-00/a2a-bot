@@ -8,3 +8,15 @@
 - [ ] Audio token mask 确认
 - [ ] 整理log
 - [ ] 支持多卡
+
+
+
+# 一些问题
+
+## text
+
+text是target和text是input的时候token的组成不同，需要分开处理。
+
+## audio
+
+audio token mask 需要确认。
