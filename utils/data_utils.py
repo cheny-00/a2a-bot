@@ -177,12 +177,21 @@ def get_target_text_token(text: tp.AnyStr, tokenizer, token_config, max_seq_leng
     tokens = tokenizer.encode(text)
     pad_t = token_config["pad_t"]
     eot = token_config["eot"]
-    tokens = tokens + [eot]
-    token_mask = [1] * len(tokens)
+    # Convert to tensor and concatenate using proper tensor operations
+    tokens = torch.cat([
+        tokens if isinstance(tokens, torch.Tensor) else torch.tensor(tokens),
+        torch.tensor([eot], dtype=torch.long)
+    ])
+    token_mask = torch.ones(len(tokens), dtype=torch.bool)
+    
     if max_seq_length is not None:
-        tokens = tokens + [pad_t] * (max_seq_length - len(tokens))
-        token_mask = token_mask + [0] * (max_seq_length - len(token_mask))
-    return torch.tensor(tokens, dtype=torch.long), torch.tensor(token_mask, dtype=torch.bool)
+        padding = torch.full((max_seq_length - len(tokens),), pad_t, dtype=torch.long)
+        tokens = torch.cat([tokens, padding])
+        # Create mask using proper tensor operations
+        mask_padding = torch.zeros(max_seq_length - len(token_mask), dtype=torch.bool)
+        token_mask = torch.cat([token_mask, mask_padding])
+    
+    return tokens, token_mask
     
     
     

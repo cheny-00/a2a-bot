@@ -37,7 +37,6 @@ class DataInterface(pl.LightningDataModule):
                 indices = list(range(len(self.train_set)))
                 random.shuffle(indices)
                 split_rate = int(0.9 * len(self.train_set)) 
-                print(split_rate, len(self.train_set))
                 train_indices = indices[:split_rate]
                 val_indices = indices[split_rate:]
                 self.val_set = Subset(self.train_set, val_indices)

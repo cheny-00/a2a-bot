@@ -186,9 +186,6 @@ def generate(
     include_prompt: bool = True,
     generate_text=False,
 ) -> torch.Tensor:
-    # print("eos_id_a:", eos_id_a)
-    # print("eos_id_t:", eos_id_t)
-    # print("pad_id:", pad_id)
     """
     Takes a conditioning sequence (prompt) as input and continues to generate as many tokens as requested.
     The implementation of this function is modified from A. Karpathy's nanoGPT.
