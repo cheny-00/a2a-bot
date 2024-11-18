@@ -70,13 +70,23 @@ class ModelInterface(pl.LightningModule):
 
 
     def get_scheduler(self, optimizer, scheduler_name):
-        def lr_lambda(epoch):
+        def lr_lambda(it):
             """ This lambda function encapsulates your custom learning rate logic. """
+            if self.hparams.scheduler_interval == "epoch":
+                max_iters = self.hparams.max_iters
+                warmup_iters = self.hparams.warmup_iters
+            else:
+                max_iters = self.hparams.max_steps
+                warmup_iters = self.hparams.warmup_steps
+                if warmup_iters < 1:
+                    warmup_iters = warmup_iters * max_iters
+                warmup_iters = int(warmup_iters)
+
             return schedulers.litgpt_get_lr(
                 learning_rate=self.hparams.lr,
-                it=epoch,
-                warmup_iters=self.hparams.warmup_iters,
-                max_iters=self.hparams.max_iters,
+                it=it,
+                warmup_iters=warmup_iters,
+                max_iters=max_iters,
                 min_lr=self.hparams.min_lr
             )
 
@@ -100,7 +110,7 @@ class ModelInterface(pl.LightningModule):
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "interval": "epoch",  # `interval` specifies when the scheduler is applied.
+                "interval": self.hparams.scheduler_interval,  # `interval` specifies when the scheduler is applied.
                 "frequency": 1  # `frequency` defines how often the scheduler is applied.
             }
         }

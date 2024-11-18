@@ -18,3 +18,25 @@ audio_special_tokens = 64
 stage_1 = "asr"
 stage_2 = "AT"
 stage_3 = "A1A2"
+
+[stage_1]
+lr = 1e-3
+min_lr = 4e-6
+max_steps = 17000
+warmup_steps = 0.1
+scheduler_interval = "step"
+
+
+[stage_2]
+lr = 4e-4
+min_lr = 4e-6
+max_steps = 27000
+warmup_steps = 0.1
+scheduler_interval = "step"
+
+[stage_3]
+lr = 4e-4
+min_lr = 4e-6
+max_steps = 50000
+warmup_steps = 0.1
+scheduler_interval = "step"

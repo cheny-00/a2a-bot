@@ -39,7 +39,7 @@ def text_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: t
     assert mask.shape == targets.shape
 
     # Flatten logits, targets, and mask to 1D arrays
-    logits_flat = logits.view(-1, logits.size(-1))  # Flatten to [B * T, card]
+    logits_flat = logits.view(-1, logits.size(-1))  # Flatten to [B * T]
     targets_flat = targets.view(-1)  # Flatten to [B * T]
     mask_flat = mask.view(-1)  # Flatten to [B * T]
     

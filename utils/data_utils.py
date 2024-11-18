@@ -172,4 +172,18 @@ def pad_snac_tokens(token_config: tp.Dict, snac_tokens: tp.List[tp.List[int]], m
         
     return padded_snac_tokens, padding_mask
     
+
+def get_target_text_token(text: tp.AnyStr, tokenizer, token_config, max_seq_length=None):
+    tokens = tokenizer.encode(text)
+    pad_t = token_config["pad_t"]
+    eot = token_config["eot"]
+    tokens = tokens + [eot]
+    token_mask = [1] * len(tokens)
+    if max_seq_length is not None:
+        tokens = tokens + [pad_t] * (max_seq_length - len(tokens))
+        token_mask = token_mask + [0] * (max_seq_length - len(token_mask))
+    return torch.tensor(tokens, dtype=torch.long), torch.tensor(token_mask, dtype=torch.bool)
+    
+    
+    
     

@@ -16,7 +16,8 @@ from utils.data_utils import (
     load_audio_from_bytes,
     get_input_template,
     get_whisper_embeddings,
-    pad_to_max_length
+    pad_to_max_length,
+    get_target_text_token
 )
 
 
@@ -84,10 +85,12 @@ class AsrDataset(Dataset):
         audio_feature = audio_feature.squeeze(0)
 
         features = dict()
-        text_tokens = self.tokenizer.encode(data['question'])
-        padded_text_token = self._pad_token(text_tokens, max_length=self.max_seq_length, pad_value=self.config["token_config"]["pad_t"])
-        features['text_length'] = text_tokens.size(0)
-        features['text'] = padded_text_token.to(torch.long)
+        text_tokens, text_mask = get_target_text_token(data['question'], self.tokenizer, self.config["token_config"], self.max_seq_length)
+        text_length = text_tokens.size(0)
+        
+        features['text_length'] = text_length
+        features['text'] = text_tokens.to(torch.long)
+        features['text_mask'] = text_mask
         features['audio_feature'] = audio_feature
         features['input_ids'] = input_ids
         features['audio_length'] = audio_length

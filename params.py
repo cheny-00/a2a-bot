@@ -36,6 +36,20 @@ def get_token_config(token_config: Dict) -> Dict:
 
     return token_config
 
+def get_task_config(train_params: Dict, task_config: Dict):
+    task = train_params["task"]
+    
+    if train_params["valid_func_name"] == train_params["train_func_name"] == "omni":
+        train_params["train_func_name"] = f"omni_{task}_training"
+        train_params["valid_func_name"] = f"omni_{task}_validation"
+        print(f"======= Update train_func_name and valid_func_name to omni_{task} =======")
+    if task in task_config:
+        print(f"======= Update {task} from config.toml lr and min_lr =======")
+        for k, v in task_config[task].items():
+            train_params[k] = v
+    return train_params
+    
+    
 
 def get_args():
     parser = ArgumentParser()
@@ -68,30 +82,36 @@ def get_args():
 
     ## task & functions
     train_config.add_argument("--task", type=str, default="stage_1", dest="train_config_task")
-    train_config.add_argument("--train_func_name", type=str, default="omni_stage_3_training",
+    train_config.add_argument("--train_func_name", type=str, default="omni",
                               dest="train_config_train_func_name")
-    train_config.add_argument("--valid_func_name", type=str, default="omni_stage_3_validation",
+    train_config.add_argument("--valid_func_name", type=str, default="omni",
                               dest="train_config_valid_func_name")
-    train_config.add_argument("--loss_fn_name", type=str, default="", dest="train_config_loss_fn_name")
+    train_config.add_argument("--loss_fn_name", type=str, default=None, dest="train_config_loss_fn_name")
 
     ## params 
     train_config.add_argument("--lr", type=float, default=5.5e-4, dest="train_config_lr")
     train_config.add_argument("--optimizer_name", type=str, default="AdamW", dest="train_config_optimizer_name")
     train_config.add_argument("--scheduler_name", type=str, default="CosineAnnealing",
                               dest="train_config_scheduler_name")
-    train_config.add_argument("--warmup_iters", type=int, default=1000, dest="train_config_warmup_iters")
-    train_config.add_argument("--max_iters", type=int, default=100000, dest="train_config_max_iters")
+    train_config.add_argument("--warmup_iters", type=int, default=3, dest="train_config_warmup_iters")
+    train_config.add_argument("--max_iters", type=int, default=20, dest="train_config_max_iters")
+    train_config.add_argument("--warmup_steps", type=float, default=0.1, dest="train_config_warmup_steps")
+    train_config.add_argument("--max_steps", type=int, default=100000, dest="train_config_max_steps")
+    
     train_config.add_argument("--min_lr", type=float, default=1e-6, dest="train_config_min_lr")
+    train_config.add_argument("--scheduler_interval", type=str, default="step", dest="train_config_scheduler_interval")
 
     args = parser.parse_args()
 
     args.data_params = get_group_parameters(args, "data_config_")
     args.train_params = get_group_parameters(args, "train_config_")
+    if "loss_fn_name" not in args.train_params:
+        args.train_params["loss_fn_name"] = None
+    
+        
 
     args.pl_trainer_params = get_group_parameters(args, "pl_trainer_")
     args.pl_trainer_params["devices"] = parse_devices(args.pl_trainer_params["devices"])
-    args.pl_trainer_params["max_steps"] = args.train_params["max_iters"]
-    # args.pl_trainer_params["min_iters"] = args.train_params["min_iters"]
 
     return args
 

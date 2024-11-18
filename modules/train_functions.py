@@ -13,10 +13,12 @@ def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
     input_ids = batch['input_ids']
     audio_length = batch['audio_length']
     target = batch['text']
+    target_mask = batch['text_mask']
 
     logit_a, logit_t = self(audio_feature, input_ids, whisper_lens=audio_length, task='asr')
 
-    loss = self.loss_function["xnet"](logit_t.reshape(-1, logit_t.size(-1)), target.reshape(-1))
+    loss_text = text_mask_cross_entropy(logit_t, target, target_mask)
+    loss = loss_text
 
     self.log(
         "train_loss",
