@@ -44,7 +44,7 @@ def get_task_config(train_params: Dict, task_config: Dict):
         train_params["valid_func_name"] = f"omni_{task}_validation"
         print(f"======= Update train_func_name and valid_func_name to omni_{task} =======")
     if task in task_config:
-        print(f"======= Update {task} from config.toml lr and min_lr =======")
+        print(f"======= Update {task}'s parameters from config.toml =======")
         for k, v in task_config[task].items():
             train_params[k] = v
     

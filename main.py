@@ -3,11 +3,6 @@
 # @Author  :   chy
 
 
-import torch
-import tomllib
-
-import pytorch_lightning as pl
-from argparse import ArgumentParser
 from pytorch_lightning import Trainer
 import pytorch_lightning.callbacks as plc
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -56,7 +51,7 @@ def main(args):
     task = args.train_params["task"]
     if task in config and "dataset" in config[task]:
         args.data_params["dataset"] = config[task]["dataset"]
-        print(f"use dataset: {args.data_params['dataset']} for task: {task}")
+        print(f"========= Use dataset: {args.data_params['dataset']} for task: {task} =========")
     
     model = ModelInterface(
         model_name=args.model_name,

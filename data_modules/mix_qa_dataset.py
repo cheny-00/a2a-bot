@@ -10,7 +10,8 @@ from utils.data_utils import (
     get_audio_template,
     pad_text_tokens,
     pad_snac_tokens,
-    construct_snac_tokens
+    construct_snac_tokens,
+    get_target_text_token
 )
 from pathlib import Path
 import typing as tp
@@ -64,8 +65,6 @@ class MixQaDataset(Dataset):
         
         
         question_tokens = self.tokenizer.encode(data["question"])
-        answer_tokens = self.tokenizer.encode(data["answer"])
-        answer_token_length = answer_tokens.size(0)
         
         question_audio_feature, question_audio_length = self._get_audio_embeddings(question_audio)
         question_audio_feature = pad_to_max_length(question_audio_feature, self.max_seq_length)
@@ -74,9 +73,8 @@ class MixQaDataset(Dataset):
         audio_input_ids = get_audio_template(self.config["token_config"], self.max_seq_length, self.model_layers)
 
         question_tokens = pad_text_tokens(self.config["token_config"], question_tokens, self.max_seq_length)
-        answer_tokens = pad_text_tokens(self.config["token_config"], answer_tokens, self.max_seq_length)
-        
 
+        answer_token, answer_token_mask = get_target_text_token(data["answer"], self.tokenizer, self.config["token_config"], self.max_seq_length)
         
         features = dict()
         
@@ -87,8 +85,8 @@ class MixQaDataset(Dataset):
         features["question_audio_length"] = question_audio_length   
         
         # features["question_tokens"] = question_tokens.to(torch.long)
-        features["answer_token"] = answer_tokens.to(torch.long)
-        features["answer_token_length"] = answer_token_length
+        features["answer_token"] = answer_token
+        features["answer_token_mask"] = answer_token_mask
         
         
         input_ids = audio_input_ids + [question_tokens]
