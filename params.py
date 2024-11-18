@@ -47,7 +47,6 @@ def get_task_config(train_params: Dict, task_config: Dict):
         print(f"======= Update {task} from config.toml lr and min_lr =======")
         for k, v in task_config[task].items():
             train_params[k] = v
-    return train_params
     
     
 
@@ -104,6 +103,7 @@ def get_args():
     args = parser.parse_args()
 
     args.data_params = get_group_parameters(args, "data_config_")
+    
     args.train_params = get_group_parameters(args, "train_config_")
     if "loss_fn_name" not in args.train_params:
         args.train_params["loss_fn_name"] = None

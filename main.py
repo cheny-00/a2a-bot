@@ -16,7 +16,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from modules.model_interface import ModelInterface
 from data_modules.data_interface import DataInterface
 from mini_omni.litgpt.config import Config
-from params import get_config, get_args
+from params import get_config, get_args, get_task_config
 from utils.model_utils import load_models
 from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from pathlib import Path
@@ -52,6 +52,11 @@ def main(args):
     config = get_config(args.config_path)
     model_config = Config.from_file(Path(args.ckpt_dir) / "model_config.yaml")
     config[args.model_name] = model_config
+    get_task_config(args.train_params, config)
+    task = args.train_params["task"]
+    if task in config and "dataset" in config[task]:
+        args.data_params["dataset"] = config[task]["dataset"]
+        print(f"use dataset: {args.data_params['dataset']} for task: {task}")
     
     model = ModelInterface(
         model_name=args.model_name,
