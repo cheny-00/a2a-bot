@@ -21,7 +21,7 @@ def load_audio_from_bytes(audio_bytes):
     return mel, int(duration_ms / 20) + 1
 
 
-def get_whisper_embeddings(whisper_model, mel):
+def get_whisper_embeddings(whisper_model, mel, leng):
     """
 
     :param whisper_model:
@@ -30,7 +30,7 @@ def get_whisper_embeddings(whisper_model, mel):
     """
     device = whisper_model.device
     with torch.no_grad():
-        audio_feature = whisper_model.embed_audio(mel.unsqueeze(0).to(device))
+        audio_feature = whisper_model.embed_audio(mel.unsqueeze(0).to(device))[0][:leng]
     return audio_feature
 
 
