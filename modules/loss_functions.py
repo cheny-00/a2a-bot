@@ -39,14 +39,13 @@ def text_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: t
     assert mask.shape == targets.shape
 
     # Flatten logits, targets, and mask to 1D arrays
-    logits_flat = logits.view(-1, logits.size(-1))  # Flatten to [B * T]
+    logits_flat = logits.view(-1, logits.size(-1))  # Flatten to [B * T, D]
     targets_flat = targets.view(-1)  # Flatten to [B * T]
     mask_flat = mask.view(-1)  # Flatten to [B * T]
     
     # Apply mask to logits and targets (use mask to filter out invalid tokens)
     logits_masked = logits_flat[mask_flat]
     targets_masked = targets_flat[mask_flat]
-    
     # Calculate cross-entropy loss only for valid tokens
     ce = F.cross_entropy(logits_masked, targets_masked)
     return ce

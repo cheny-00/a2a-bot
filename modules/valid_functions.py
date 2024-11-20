@@ -12,12 +12,12 @@ def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
     audio_feature = batch['audio_feature']
     input_ids = batch['input_ids']
     audio_length = batch['audio_length']
-    target = batch['text']
-    target_mask = batch['text_mask']
+    target_token = batch['text_token']
+    target_token_mask = batch['text_token_mask']
 
     logit_a, logit_t = self(audio_feature, input_ids, whisper_lens=audio_length, task='asr')
 
-    loss_text = text_mask_cross_entropy(logit_t, target, target_mask)
+    loss_text = text_mask_cross_entropy(logit_t, target_token, target_token_mask)
     val_loss = loss_text
     
     self.log(
@@ -29,7 +29,7 @@ def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
     )
     if self.metrics is not None and "val_text_acc" in self.metrics:
         pred_ids = sample(logit_t)
-        text_acc = self.val_text_acc.update(pred_ids, target)
+        text_acc = self.val_text_acc.update(pred_ids, target_token)
         self.log(
             f"{self.task}/val_text_acc",
             text_acc,

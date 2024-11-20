@@ -46,6 +46,7 @@ def main(args):
     
     config = get_config(args.config_path)
     model_config = Config.from_file(Path(args.ckpt_dir) / "model_config.yaml")
+    print("model_config", model_config)
     config[args.model_name] = model_config
     get_task_config(args.train_params, config)
     task = args.train_params["task"]
@@ -53,9 +54,13 @@ def main(args):
         args.data_params["dataset"] = config[task]["dataset"]
         print(f"========= Use dataset: {args.data_params['dataset']} for task: {task} =========")
     
+    snac_model, whisper_model, tokenizer = load_models(config, args.ckpt_dir)
+    
     model = ModelInterface(
         model_name=args.model_name,
         config=config,
+        snac_model=snac_model,
+        tokenizer=tokenizer,
         **args.train_params
     )
     
@@ -63,7 +68,6 @@ def main(args):
     model.model.load_state_dict(model_state_dict)
     
     
-    snac_model, whisper_model, tokenizer = load_models(config, args.ckpt_dir)
 
     
     data_module = DataInterface(

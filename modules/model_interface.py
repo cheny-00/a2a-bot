@@ -39,6 +39,8 @@ class ModelInterface(pl.LightningModule):
             valid_func_name,
             task,
             config,
+            snac_model=None,
+            tokenizer=None,
             **kwargs
     ):
         super().__init__()
@@ -47,6 +49,8 @@ class ModelInterface(pl.LightningModule):
         self.task = task
         self.config = config
         self.metrics = None
+        self.snac_model = snac_model
+        self.tokenizer = tokenizer
         self.total_text_vocab_size = self.config["token_config"]["padded_text_vocab_size"]
         
         self.loss_function = {}

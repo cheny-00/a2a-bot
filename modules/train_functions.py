@@ -12,12 +12,12 @@ def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
     audio_feature = batch['audio_feature']
     input_ids = batch['input_ids']
     audio_length = batch['audio_length']
-    target = batch['text']
-    target_mask = batch['text_mask']
+    target_token = batch['text_token']
+    target_token_mask = batch['text_token_mask']
+    target_text = batch['text']
+    logit_a, logit_t = self(audio_feature, input_ids, whisper_lens=audio_length, task='A1T1')
 
-    logit_a, logit_t = self(audio_feature, input_ids, whisper_lens=audio_length, task='asr')
-
-    loss_text = text_mask_cross_entropy(logit_t, target, target_mask)
+    loss_text = text_mask_cross_entropy(logit_t, target_token, target_token_mask)
     loss = loss_text
 
     self.log(
@@ -27,9 +27,13 @@ def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
         on_epoch=True,
         prog_bar=True,
     )
+
+    # result_tokens = torch.argmax(torch.softmax(logit_t, dim=-1), dim=-1)
+    # for _i, _result_tokens in enumerate(result_tokens):
+    #     result_text = self.tokenizer.decode(_result_tokens)
     if self.metrics is not None and "train_text_acc" in self.metrics:
         pred_ids = torch.argmax(logit_t, dim=-1)
-        text_acc = self.train_text_acc.update(pred_ids, target)
+        text_acc = self.train_text_acc.update(pred_ids, target_token)
         self.log(
             f"{self.task}/train_text_acc",
             text_acc,

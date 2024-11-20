@@ -71,7 +71,7 @@ class AsrDataset(Dataset):
 
     def _get_audio_embeddings(self, audio_info):
         mel, leng = load_audio_from_bytes(audio_info)
-        audio_feature = get_whisper_embeddings(self.whisper_model, mel)
+        audio_feature = get_whisper_embeddings(self.whisper_model, mel, leng)
         return audio_feature, leng
 
 
@@ -85,12 +85,13 @@ class AsrDataset(Dataset):
         audio_feature = audio_feature.squeeze(0)
 
         features = dict()
-        text_tokens, text_mask = get_target_text_token(data['question'], self.tokenizer, self.config["token_config"], self.max_seq_length)
-        text_length = text_tokens.size(0)
+        text_token, text_token_mask = get_target_text_token(data['question'], self.tokenizer, self.config["token_config"], self.max_seq_length)
+        text_token_length = text_token.size(0)
         
-        features['text_length'] = text_length
-        features['text'] = text_tokens.to(torch.long)
-        features['text_mask'] = text_mask
+        features['text_token_length'] = text_token_length
+        features['text_token'] = text_token.to(torch.long)
+        features["text"] = data['question']
+        features['text_token_mask'] = text_token_mask
         features['audio_feature'] = audio_feature
         features['input_ids'] = input_ids
         features['audio_length'] = audio_length
