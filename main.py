@@ -17,7 +17,7 @@ from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from pathlib import Path
 
 
-def load_callbacks(model_name, version):
+def load_callbacks(model_name, version, task):
     callbacks = list()
     # callbacks.append(
     #     plc.EarlyStopping(
@@ -27,11 +27,11 @@ def load_callbacks(model_name, version):
 
     callbacks.append(
         plc.ModelCheckpoint(
-            monitor="valid_acc_epoch",
+            monitor=f"{task}/val_loss",
             # dirpath=f"checkpoints/{model_name}/version_{version}",
-            filename="best-{epoch}-{valid_acc_epoch:.3f}-{valid_loss_epoch:.2f}",
+            filename="best-{epoch}-{valid_loss_epoch:.2f}",
             save_top_k=1,
-            mode="max",
+            mode="min",
             save_last=True,
         )
     )
@@ -78,7 +78,7 @@ def main(args):
     )
     
     logger = TensorBoardLogger(save_dir=args.log_dir, name=args.model_name)
-    args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version)
+    args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version, task)
     args.pl_trainer_params["logger"] = logger
     
     trainer = Trainer(**args.pl_trainer_params)
