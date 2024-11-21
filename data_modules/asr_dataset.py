@@ -95,5 +95,6 @@ class AsrDataset(Dataset):
         features['audio_feature'] = audio_feature
         features['input_ids'] = input_ids
         features['audio_length'] = audio_length
+        features['task'] = "A1T1"
 
         return features

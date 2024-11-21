@@ -7,7 +7,8 @@ https://github.com/EleutherAI/gpt-neox/tree/main/megatron/model.
 """
 
 import math
-from typing import Any, Optional, Tuple
+import typing as tp
+from typing import Any, Optional, Tuple, List
 
 import torch
 import torch.nn as nn
@@ -100,7 +101,7 @@ class GPT(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def concat_whisper_feat(self, audio_feature, input_ids, T, task):
+    def concat_whisper_feat(self, audio_feature, input_ids: tp.List[torch.Tensor], T, task):
         # T => whisper_lens
         for j in range(len(T)):
             if task[j] != "T1T2" and task[j] != "T1A2": # 有audio input的任务才替换

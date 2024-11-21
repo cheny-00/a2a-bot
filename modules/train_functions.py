@@ -15,7 +15,8 @@ def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
     target_token = batch['text_token']
     target_token_mask = batch['text_token_mask']
     target_text = batch['text']
-    logit_a, logit_t = self(audio_feature, input_ids, whisper_lens=audio_length, task='A1T1')
+    task = batch['task']
+    logit_a, logit_t = self(audio_feature, input_ids, whisper_lens=audio_length, task=task)
 
     loss_text = text_mask_cross_entropy(logit_t, target_token, target_token_mask)
     loss = loss_text
