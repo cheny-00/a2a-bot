@@ -175,10 +175,12 @@ def pad_snac_tokens(token_config: tp.Dict, snac_tokens: tp.List[tp.List[int]], m
 
 def get_target_text_token(text: tp.AnyStr, tokenizer, token_config, max_seq_length=None):
     tokens = tokenizer.encode(text)
+    input_t = token_config["input_t"]
     pad_t = token_config["pad_t"]
     eot = token_config["eot"]
     # Convert to tensor and concatenate using proper tensor operations
     tokens = torch.cat([
+        torch.tensor([input_t], dtype=torch.long),
         tokens if isinstance(tokens, torch.Tensor) else torch.tensor(tokens),
         torch.tensor([eot], dtype=torch.long)
     ])
