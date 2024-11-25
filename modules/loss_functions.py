@@ -33,7 +33,7 @@ def audio_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: 
     return ce, ce_per_codebook
 
 
-def text_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: torch.Tensor):
+def text_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: torch.Tensor, ignore_index: int = -100):
     # Check shapes
     assert logits.shape[:-1] == targets.shape
     assert mask.shape == targets.shape
@@ -47,8 +47,7 @@ def text_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: t
     logits_masked = logits_flat[mask_flat]
     targets_masked = targets_flat[mask_flat]
     # Calculate cross-entropy loss only for valid tokens
-    ce = chunked_cross_entropy(logits_masked, targets_masked)
-    print(f"ce: {ce}", logits_masked, targets_masked, logits_masked.shape, targets_masked.shape)
+    ce = chunked_cross_entropy(logits_masked, targets_masked, ignore_index=ignore_index)
     return ce
 
 

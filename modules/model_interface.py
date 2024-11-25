@@ -51,7 +51,8 @@ class ModelInterface(pl.LightningModule):
         self.metrics = None
         self.snac_model = snac_model
         self.tokenizer = tokenizer
-        self.total_text_vocab_size = self.config["token_config"]["padded_text_vocab_size"]
+        self.token_config = self.config["token_config"]
+        self.total_text_vocab_size = self.token_config["padded_text_vocab_size"]
         
         self.loss_function = {}
         

@@ -14,11 +14,16 @@ def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
     audio_length = batch['audio_length']
     target_token = batch['text_token']
     target_token_mask = batch['text_token_mask']
+    target_text = batch['text']
     task = batch['task']
-
+    pad_t = self.token_config["pad_t"]
+    
     logit_a, logit_t = self(audio_feature, input_ids, whisper_lens=audio_length, task=task)
 
-    loss_text = text_mask_cross_entropy(logit_t, target_token, target_token_mask)
+    shifted_target_token = target_token[..., 1:].contiguous()
+    shifted_logits = logit_t[..., :-1, :].contiguous() 
+    shifted_target_token_mask = target_token_mask[..., 1:].contiguous()
+    loss_text = text_mask_cross_entropy(shifted_logits, shifted_target_token, shifted_target_token_mask, ignore_index=pad_t)
     val_loss = loss_text
     
     self.log(

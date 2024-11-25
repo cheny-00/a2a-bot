@@ -38,6 +38,7 @@ class MixQaDataset(Dataset):
         self.max_seq_length = config["max_seq_length"]
         self.config = config
         self.model_layers = config["model_layers"]
+        self.token_config = config["token_config"]
     
     def __len__(self):
         return len(self.data)
@@ -70,9 +71,9 @@ class MixQaDataset(Dataset):
         question_audio_feature = pad_to_max_length(question_audio_feature, self.max_seq_length)
         question_audio_feature = question_audio_feature.squeeze(0)
         
-        audio_input_ids = get_audio_template(self.config["token_config"], self.max_seq_length, self.model_layers)
+        audio_input_ids = get_audio_template(self.token_config, self.max_seq_length, self.model_layers)
 
-        question_tokens = pad_text_tokens(self.config["token_config"], question_tokens, self.max_seq_length)
+        question_tokens = pad_text_tokens(self.token_config, question_tokens, self.max_seq_length)
 
         answer_token, answer_token_mask = get_target_text_token(data["answer"], self.tokenizer, self.config["token_config"], self.max_seq_length)
         
