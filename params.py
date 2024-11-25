@@ -69,6 +69,8 @@ def get_args():
     ## gradient clip
     pl_trainer_config.add_argument("--gradient_clip_val", type=float, default=1.0, dest="pl_trainer_gradient_clip_val")
     pl_trainer_config.add_argument("--gradient_clip_algorithm", type=str, default="norm", dest="pl_trainer_gradient_clip_algorithm")
+    ## gradient accumulation
+    pl_trainer_config.add_argument("--accumulate_grad_batches", type=int, default=1, dest="pl_trainer_accumulate_grad_batches")
 
     # data config
     data_config = parser.add_argument_group("data config", "data config")
