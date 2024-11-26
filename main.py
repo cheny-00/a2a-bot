@@ -2,16 +2,18 @@
 # @Time    :   2024/11/4
 # @Author  :   chy
 
-
+import os
+import json
 from pytorch_lightning import Trainer
 import pytorch_lightning.callbacks as plc
 from pytorch_lightning.loggers import TensorBoardLogger
+from lightning.pytorch.strategies import DeepSpeedStrategy
 
 
 from modules.model_interface import ModelInterface
 from data_modules.data_interface import DataInterface
 from mini_omni.litgpt.config import Config
-from params import get_config, get_args, get_task_config
+from params import get_config, get_args, get_task_config, update_deepspeed_config
 from utils.model_utils import load_models
 from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from pathlib import Path
@@ -64,6 +66,13 @@ def main(args):
         **args.train_params
     )
     
+    strategy = None
+    if args.deepspeed and os.path.exists(args.deepspeed_config_path):
+        with open(args.deepspeed_config_path, "r") as f:
+            deepspeed_config = json.load(f) 
+        update_deepspeed_config(deepspeed_config, args.train_params)
+        strategy = DeepSpeedStrategy(config=deepspeed_config)
+    
     model_state_dict = lazy_load(args.ckpt_dir + "/lit_model.pth")
     model.model.load_state_dict(model_state_dict)
     
@@ -74,6 +83,7 @@ def main(args):
         config=config,
         whisper_model=whisper_model,
         tokenizer=tokenizer,
+        strategy=strategy,
         **args.data_params,
     )
     

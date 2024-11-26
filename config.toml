@@ -15,7 +15,7 @@ audio_special_tokens = 64
 
 
 [task_mapping]
-stage_1 = "asr"
+stage_1 = "A1T1"
 stage_2 = "AT"
 stage_3 = "A1A2"
 

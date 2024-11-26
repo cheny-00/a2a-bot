@@ -9,6 +9,15 @@ from typing import Dict
 from utils.utils import get_group_parameters
 
 
+def update_deepspeed_config(deepspeed_config: Dict, train_params: Dict):
+    if "optimizer" in deepspeed_config:
+        deepspeed_config["optimizer"]["params"]["lr"] = train_params["lr"]
+    if "scheduler" in deepspeed_config:
+        deepspeed_config["scheduler"]["params"]["warmup_min_lr"] = train_params["min_lr"]
+        deepspeed_config["scheduler"]["params"]["warmup_max_lr"] = train_params["lr"]
+        deepspeed_config["scheduler"]["params"]["warmup_num_steps"] = train_params["max_steps"] * train_params["warmup_steps"]
+
+
 def get_token_config(token_config: Dict) -> Dict:
     # 读取基本配置
     text_vocab_size = token_config["text_vocab_size"]
@@ -58,6 +67,10 @@ def get_args():
     parser.add_argument("--ckpt_dir", type=str, default="checkpoint/")
     parser.add_argument("--log_dir", type=str, default=".logs/")
 
+    # deepspeed config
+    parser.add_argument("--deepspeed_config_path", type=str, default="./deepspeed_config.json")
+    parser.add_argument("--deepspeed", action="store_true", default=False)
+    
     # pl_trainer config
     pl_trainer_config = parser.add_argument_group("pl_trainer config", "pl_trainer config")
     # pl_trainer_config.add_argument("--max_epochs", type=int, default=200, dest="pl_trainer_max_epochs")
@@ -71,6 +84,8 @@ def get_args():
     pl_trainer_config.add_argument("--gradient_clip_algorithm", type=str, default="norm", dest="pl_trainer_gradient_clip_algorithm")
     ## gradient accumulation
     pl_trainer_config.add_argument("--accumulate_grad_batches", type=int, default=1, dest="pl_trainer_accumulate_grad_batches")
+    ## mixed precision
+    pl_trainer_config.add_argument("--precision", type=int, default=32, dest="pl_trainer_precision")
 
     # data config
     data_config = parser.add_argument_group("data config", "data config")
