@@ -84,8 +84,6 @@ def get_args():
     pl_trainer_config.add_argument("--gradient_clip_algorithm", type=str, default="norm", dest="pl_trainer_gradient_clip_algorithm")
     ## gradient accumulation
     pl_trainer_config.add_argument("--accumulate_grad_batches", type=int, default=1, dest="pl_trainer_accumulate_grad_batches")
-    ## mixed precision
-    pl_trainer_config.add_argument("--precision", type=int, default=32, dest="pl_trainer_precision")
 
     # data config
     data_config = parser.add_argument_group("data config", "data config")
@@ -146,9 +144,6 @@ def get_config(config_path):
 
 def parse_devices(devices):
     """
-    Parses the input to determine the list of device indices or 'auto'.
-    
-    Args:
         devices (str): A comma-separated string of device indices or 'auto'.
     
     Returns:
