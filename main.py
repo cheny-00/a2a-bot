@@ -19,7 +19,7 @@ from params import get_config, get_args, get_task_config, update_deepspeed_confi
 from utils.model_utils import load_models
 from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from pathlib import Path
-
+from utils.logging_utils import LightRichProgressBarTheme
 
 def load_callbacks(model_name, version, task):
     callbacks = list()
@@ -39,6 +39,9 @@ def load_callbacks(model_name, version, task):
             save_last=True,
         )
     )
+    callbacks.append(plc.LearningRateMonitor(logging_interval="step"))
+    callbacks.append(plc.RichProgressBar(theme=LightRichProgressBarTheme()))
+    callbacks.append(plc.RichModelSummary())
 
     # if args.lr_scheduler:
     #     callbacks.append(plc.LearningRateMonitor(logging_interval="epoch"))

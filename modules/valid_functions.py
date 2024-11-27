@@ -32,6 +32,7 @@ def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
         on_step=False,
         on_epoch=True,
         prog_bar=True,
+        batch_size=audio_feature.size(0)
     )
     if self.metrics is not None and "val_text_acc" in self.metrics:
         pred_ids = sample(logit_t)
@@ -42,6 +43,7 @@ def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
             on_step=False,
             on_epoch=True,
             prog_bar=True,
+            batch_size=audio_feature.size(0)
         )
     
     return val_loss

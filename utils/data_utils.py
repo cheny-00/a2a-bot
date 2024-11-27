@@ -48,6 +48,7 @@ def get_input_template(token_config, seq_length, model_layers=8):
     text_input_tokens = [token_config["input_t"]] + [token_config["pad_t"]] * seq_length + [token_config["eot"], token_config["answer_t"]]
     text_input_tokens = torch.tensor(text_input_tokens)
     input_ids.append(text_input_tokens)
+    input_ids = [inp.detach().contiguous() for inp in input_ids]
 
     return input_ids
 

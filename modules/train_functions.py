@@ -18,7 +18,6 @@ def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
     task = batch['task']
     pad_t = self.token_config["pad_t"]
     
-    
     logit_a, logit_t = self(audio_feature, input_ids, whisper_lens=audio_length, task=task)
 
     shifted_target_token = target_token[..., 1:].contiguous()
@@ -33,6 +32,7 @@ def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
         on_step=True,
         on_epoch=True,
         prog_bar=True,
+        batch_size=audio_feature.size(0)
     )
 
     # result_tokens = torch.argmax(torch.softmax(logit_t, dim=-1), dim=-1)
@@ -47,6 +47,7 @@ def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
             on_step=True,
             on_epoch=True,
             prog_bar=True,
+            batch_size=audio_feature.size(0)
         )
 
     return loss
