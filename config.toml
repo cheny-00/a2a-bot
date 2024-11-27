@@ -1,6 +1,6 @@
 
 model_layers = 8
-max_seq_length = 2048
+max_seq_length = 1024
 snac_model_name = "hubertsiuzdak/snac_24khz"
 whisper_model_name = "small"
 

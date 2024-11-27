@@ -4,6 +4,8 @@
 
 import os
 import json
+import torch
+from torch.multiprocessing import set_start_method
 from pytorch_lightning import Trainer
 import pytorch_lightning.callbacks as plc
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -68,6 +70,7 @@ def main(args):
     
     strategy = None
     if args.deepspeed and os.path.exists(args.deepspeed_config_path):
+        print(f"========= Use deepspeed config: {args.deepspeed_config_path} =========")
         with open(args.deepspeed_config_path, "r") as f:
             deepspeed_config = json.load(f) 
         update_deepspeed_config(deepspeed_config, args.train_params)
@@ -100,4 +103,9 @@ def main(args):
 
 if __name__ == "__main__":
     args = get_args()
+    if torch.cuda.is_available(): 
+        try:
+            set_start_method("spawn")
+        except RuntimeError:
+            pass
     main(args)
