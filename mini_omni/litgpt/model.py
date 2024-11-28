@@ -106,7 +106,7 @@ class GPT(nn.Module):
         for j in range(len(T)):
             if task[j] != "T1T2" and task[j] != "T1A2": # 有audio input的任务才替换
                 for i in range(7):
-                    _seq_len = T[j] if T[j] == audio_feature[j].shape[0] else T[j] - 1
+                    _seq_len = T[j] if T[j] < audio_feature[j].shape[0] else audio_feature[j].shape[0] - 1
                     input_ids[i][j, 1 : _seq_len + 1, :] = audio_feature[j][: _seq_len].clone()
             else:
                 continue
