@@ -35,21 +35,6 @@ def omni_stage_1_training(self: pl.LightningModule, batch, batch_idx):
         batch_size=audio_feature.size(0)
     )
 
-    # result_tokens = torch.argmax(torch.softmax(logit_t, dim=-1), dim=-1)
-    # for _i, _result_tokens in enumerate(result_tokens):
-    #     result_text = self.tokenizer.decode(_result_tokens)
-    if self.metrics is not None and "train_text_acc" in self.metrics:
-        pred_ids = torch.argmax(logit_t, dim=-1)
-        text_acc = self.train_text_acc.update(pred_ids, target_token)
-        self.log(
-            f"{self.task}/train_text_acc",
-            text_acc,
-            on_step=True,
-            on_epoch=True,
-            prog_bar=True,
-            batch_size=audio_feature.size(0)
-        )
-
     return loss
 
 

@@ -24,6 +24,8 @@ from functools import partial
 
 import pytorch_lightning as pl
 
+from torchmetrics import WordErrorRate
+
 
 
 
@@ -153,14 +155,16 @@ class ModelInterface(pl.LightningModule):
         for metric_name in metrics:
             if metric_name.endswith("_acc"):
                 metric = torchmetrics.Accuracy(task="multiclass", num_classes=self.total_text_vocab_size)
+            elif metric_name.endswith("_wer"):
+                metric = WordErrorRate()
             self.__setattr__(metric_name, metric)
     
     
     def configure_metrics(self):
         task = self.task
-        # if task == "stage_1":
-        #     self.metrics = ["train_text_acc", "val_text_acc"]
-        #     self.initialize_metrics(self.metrics)
+        if task == "stage_1":
+            self.metrics = ["val_text_wer"]
+            self.initialize_metrics(self.metrics)
         
         
 

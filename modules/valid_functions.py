@@ -34,17 +34,30 @@ def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
         prog_bar=True,
         batch_size=audio_feature.size(0)
     )
-    if self.metrics is not None and "val_text_acc" in self.metrics:
+    if self.metrics is not None:
         pred_ids = sample(logit_t)
-        text_acc = self.val_text_acc.update(pred_ids, target_token)
-        self.log(
-            f"{self.task}/val_text_acc",
-            text_acc,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-            batch_size=audio_feature.size(0)
-        )
+        if "val_text_acc" in self.metrics:
+            text_acc = self.val_text_acc.update(pred_ids, target_token)
+            self.log(
+                f"{self.task}/val_text_acc",
+                text_acc,
+                on_step=False,
+                on_epoch=True,
+                prog_bar=True,
+                batch_size=audio_feature.size(0)
+            )
+        if "val_text_wer" in self.metrics:
+            pred_texts = self.tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+            target_texts = self.tokenizer.batch_decode(target_token, skip_special_tokens=True)
+            wer = self.val_text_wer.update(pred_texts, target_texts)
+            self.log(
+                f"{self.task}/val_text_wer",
+                wer,
+                on_step=False,
+                on_epoch=True,
+                prog_bar=True,
+                batch_size=audio_feature.size(0)
+            )
     
     return val_loss
 
