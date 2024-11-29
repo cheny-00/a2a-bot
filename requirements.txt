@@ -15,6 +15,8 @@ onnxruntime==1.19.0
 librosa==0.10.2.post1
 # flask==3.0.3
 fire
+ffmpeg-python
+sentencepiece
 # for training
 tensorboard
 # for dev

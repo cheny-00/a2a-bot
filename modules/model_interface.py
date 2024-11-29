@@ -65,6 +65,14 @@ class ModelInterface(pl.LightningModule):
 
         self.__set_self_function__("training_step", train_funcs, train_func_name)
         self.__set_self_function__("validation_step", valid_funcs, valid_func_name)
+        
+        # Initialize with checking world size
+        self.is_distributed = torch.distributed.is_initialized() and torch.distributed.get_world_size() > 1
+
+    def on_fit_start(self):
+        # Update distributed status when trainer is attached
+        trainer_distributed = getattr(self.trainer._accelerator_connector, "is_distributed", False)
+        self.is_distributed = self.is_distributed or trainer_distributed
 
 
     def __set_self_function__(self, self_func_name, source, func_name):
@@ -130,7 +138,7 @@ class ModelInterface(pl.LightningModule):
                 continue
             _score = self.__getattr__(metric_name).compute()
             print(f"\n {metric_name}: {_score}")
-            self.log(f"{prefix}_{metric_name}_epoch", _score, prog_bar=False)
+            self.log(f"{prefix}_{metric_name}_epoch", _score, prog_bar=False, sync_dist=self.is_distributed)
             self.__getattr__(metric_name).reset()
 
 
@@ -227,6 +235,11 @@ class ModelInterface(pl.LightningModule):
         self._model_state(model, self.task)
 
         return model
+
+    def on_fit_start(self):
+        # Update distributed status when trainer is attached
+        trainer_distributed = getattr(self.trainer._accelerator_connector, "is_distributed", False)
+        self.is_distributed = self.is_distributed or trainer_distributed
 
 
 

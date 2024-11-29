@@ -7,56 +7,46 @@ from mini_omni.litgpt.generate.base import sample
 import torch
 from modules.loss_functions import text_mask_cross_entropy
 from modules.loss_functions import audio_mask_cross_entropy
+from modules.cal_loss_process import cal_stage_1_loss
 
 def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
-    audio_feature = batch['audio_feature']
-    input_ids = batch['input_ids']
-    audio_length = batch['audio_length']
-    target_token = batch['text_token']
-    target_token_mask = batch['text_token_mask']
-    target_text = batch['text']
-    task = batch['task']
-    pad_t = self.token_config["pad_t"]
-    
-    logit_a, logit_t = self(audio_feature, input_ids, whisper_lens=audio_length, task=task)
-
-    shifted_target_token = target_token[..., 1:].contiguous()
-    shifted_logits = logit_t[..., :-1, :].contiguous() 
-    shifted_target_token_mask = target_token_mask[..., 1:].contiguous()
-    loss_text = text_mask_cross_entropy(shifted_logits, shifted_target_token, shifted_target_token_mask, ignore_index=pad_t)
-    val_loss = loss_text
-    
+    val_loss, _, logit_t = cal_stage_1_loss(self, batch)
     self.log(
         f"{self.task}/val_loss",
         val_loss,
         on_step=False,
         on_epoch=True,
         prog_bar=True,
-        batch_size=audio_feature.size(0)
+        batch_size=len(batch["task"]),
+        sync_dist=self.is_distributed
     )
     if self.metrics is not None:
         pred_ids = sample(logit_t)
+        target_text_token = batch["target_text_token"]
         if "val_text_acc" in self.metrics:
-            text_acc = self.val_text_acc.update(pred_ids, target_token)
+            text_acc = self.val_text_acc.update(pred_ids, target_text_token)
+            current_acc = self.val_text_acc.compute()
             self.log(
                 f"{self.task}/val_text_acc",
-                text_acc,
+                current_acc,
                 on_step=False,
                 on_epoch=True,
                 prog_bar=True,
-                batch_size=audio_feature.size(0)
+                sync_dist=self.is_distributed
             )
         if "val_text_wer" in self.metrics:
-            pred_texts = self.tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
-            target_texts = self.tokenizer.batch_decode(target_token, skip_special_tokens=True)
-            wer = self.val_text_wer.update(pred_texts, target_texts)
+            pred_texts = self.tokenizer.batch_decode(pred_ids)
+            target_texts = self.tokenizer.batch_decode(target_text_token)
+            self.val_text_wer.update(pred_texts, target_texts)
+            current_wer = self.val_text_wer.compute()
             self.log(
-                f"{self.task}/val_text_wer",
-                wer,
+                f"{self.task}/val_wer",
+                current_wer,
                 on_step=False,
                 on_epoch=True,
                 prog_bar=True,
-                batch_size=audio_feature.size(0)
+                batch_size=len(batch["task"]),
+                sync_dist=self.is_distributed
             )
     
     return val_loss

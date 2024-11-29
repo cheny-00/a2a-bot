@@ -4,21 +4,64 @@
 
 import torch
 import whisper
+import ffmpeg
 import numpy as np
 import typing as tp
 import torch.nn.functional as F
+from pathlib import Path
 
 from mini_omni.snac_utils.snac_utils import layershift
 
 
-def load_audio_from_bytes(audio_bytes):
-    # from https://github.com/openai/whisper/blob/main/whisper/audio.py#L62
-    audio = np.frombuffer(audio_bytes, np.int16).flatten().astype(np.float32) / 32768.0
+def _process_audio(audio: np.ndarray) -> tp.Tuple[np.ndarray, int]:
+    """Helper function to process audio data into mel spectrogram.
+    
+    Args:
+        audio (np.ndarray): Audio data as numpy array
+    Returns:
+        tuple: (mel spectrogram, number of frames)
+    """
     duration_ms = (len(audio) / 16000) * 1000
     audio = whisper.pad_or_trim(audio)
     mel = whisper.log_mel_spectrogram(audio)
-
     return mel, int(duration_ms / 20) + 1
+
+
+def load_audio_from_bytes(audio_bytes: bytes, sample_rate: int = 16000) -> tp.Tuple[np.ndarray, int]:
+    """Load and process audio data from bytes using ffmpeg.
+    
+    Args:
+        audio_bytes (bytes): Raw audio data in bytes
+        sample_rate (int): Sample rate of the audio data
+    Returns:
+        tuple: (mel spectrogram, number of frames)
+    """
+    # Create ffmpeg process with same parameters as whisper
+    process = (
+        ffmpeg.input('pipe:', threads=0)
+        .output(
+            'pipe:',
+            format='s16le',
+            acodec='pcm_s16le',
+            ac=1,
+            ar=sample_rate,
+        )
+        .run_async(pipe_stdin=True, pipe_stdout=True, pipe_stderr=True)
+    )
+    
+    # Feed audio bytes and get output
+    output, _ = process.communicate(input=audio_bytes)
+    
+    # Convert to numpy array and normalize (same as whisper implementation)
+    audio = np.frombuffer(output, np.int16).flatten().astype(np.float32) / 32768.0
+    
+    return _process_audio(audio)
+
+
+def load_audio_from_path(audio_path: tp.Union[str, Path], sample_rate: int = 16000) -> tp.Tuple[np.ndarray, int]:
+    audio = whisper.load_audio(audio_path, sample_rate=sample_rate)
+    return _process_audio(audio)
+
 
 
 def get_whisper_embeddings(whisper_model, mel, leng):

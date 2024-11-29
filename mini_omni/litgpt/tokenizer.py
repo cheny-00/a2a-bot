@@ -129,3 +129,16 @@ class Tokenizer:
     def decode(self, tensor: torch.Tensor) -> str:
         tokens = [tensor.item()] if tensor.ndim == 0 else tensor.tolist()
         return self.processor.decode(tokens)
+
+    def batch_decode(self, tensors: torch.Tensor) -> list[str]:
+        """Decode a batch of token tensors into strings.
+
+        Args:
+            tensors: A tensor of token ids with shape (batch_size, sequence_length) or (sequence_length,)
+
+        Returns:
+            A list of decoded strings
+        """
+        if tensors.ndim == 1:
+            return [self.decode(tensors)]
+        return [self.decode(tensor) for tensor in tensors]
