@@ -2,9 +2,8 @@
 # @Time    :   2024/11/29
 # @Author  :   chy
 
-import torch
-import whisper
-import numpy as np
+
+import os
 import pandas as pd
 from pathlib import Path
 from typing import Dict, AnyStr
@@ -14,7 +13,6 @@ from torch.utils.data import Dataset
 from utils.data_utils import (
     load_audio_from_bytes,
     load_audio_from_path,
-    get_input_template,
     get_whisper_embeddings,
     pad_to_max_length,
     get_target_text_token
@@ -56,7 +54,9 @@ class MiniOmniBaseDataset(Dataset):
         if "question_audio" in data:
             audio_feature, audio_length = load_audio_from_bytes(data['question_audio']["bytes"])
         elif "question_audio_path" in data:
-            audio_feature, audio_length = load_audio_from_path(data['question_audio_path'])
+            q_audio_path = data['question_audio_path']
+            audio_path = q_audio_path if os.path.exists(q_audio_path) else self.data_dir / q_audio_path
+            audio_feature, audio_length = load_audio_from_path(audio_path)
         else:
             raise ValueError("No question audio or question audio path found in data")
         audio_feature = get_whisper_embeddings(self.whisper_model, audio_feature, audio_length)
