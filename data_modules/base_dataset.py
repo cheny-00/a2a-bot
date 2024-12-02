@@ -55,7 +55,7 @@ class MiniOmniBaseDataset(Dataset):
             audio_feature, audio_length = load_audio_from_bytes(data['question_audio']["bytes"])
         elif "question_audio_path" in data:
             q_audio_path = data['question_audio_path']
-            audio_path = q_audio_path if os.path.exists(q_audio_path) else self.data_dir / q_audio_path
+            audio_path = q_audio_path if os.path.exists(q_audio_path) else self.data_dir.parent / q_audio_path
             audio_feature, audio_length = load_audio_from_path(audio_path)
         else:
             raise ValueError("No question audio or question audio path found in data")
