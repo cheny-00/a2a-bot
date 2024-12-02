@@ -138,7 +138,7 @@ class ModelInterface(pl.LightningModule):
                 continue
             _score = self.__getattr__(metric_name).compute()
             print(f"\n {metric_name}: {_score}")
-            self.log(f"{prefix}_{metric_name}_epoch", _score, prog_bar=False, sync_dist=self.is_distributed)
+            self.log(f"====== {prefix}_{metric_name}_epoch ======", _score, prog_bar=False, sync_dist=self.is_distributed)
             self.__getattr__(metric_name).reset()
 
 
@@ -169,11 +169,8 @@ class ModelInterface(pl.LightningModule):
     
     
     def configure_metrics(self):
-        task = self.task
-        if task == "stage_1":
-            self.metrics = ["val_text_wer"]
-            self.initialize_metrics(self.metrics)
-        
+        self.metrics = ["val_text_wer"]
+        self.initialize_metrics(self.metrics)
         
 
     def configure_loss(self):
