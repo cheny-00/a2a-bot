@@ -59,7 +59,7 @@ def load_audio_from_bytes(audio_bytes: bytes, sample_rate: int = 16000) -> tp.Tu
 
 
 def load_audio_from_path(audio_path: tp.Union[str, Path], sample_rate: int = 16000) -> tp.Tuple[np.ndarray, int]:
-    audio = whisper.load_audio(audio_path, sample_rate=sample_rate)
+    audio = whisper.load_audio(audio_path, sr=sample_rate)
     return _process_audio(audio)
 
 
