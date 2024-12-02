@@ -12,7 +12,7 @@ def xnet(*args, **kwargs):
 
 
 
-def audio_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: torch.Tensor):
+def audio_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: torch.Tensor, ignore_index: int = -100):
     # multi layer
     B, K, T = targets.shape
     assert logits.shape[:-1] == targets.shape
@@ -25,7 +25,7 @@ def audio_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: 
         mask_k = mask[:, k, ...].contiguous().view(-1)  # [B x T]
         ce_targets = targets_k[mask_k]
         ce_logits = logits_k[mask_k]
-        q_ce = F.cross_entropy(ce_logits, ce_targets)
+        q_ce = F.cross_entropy(ce_logits, ce_targets, ignore_index=ignore_index)
         ce += q_ce
         ce_per_codebook.append(q_ce.detach())
     # average cross entropy across codebooks

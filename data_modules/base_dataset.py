@@ -40,6 +40,7 @@ class MiniOmniBaseDataset(Dataset):
         self.max_seq_length = config["max_seq_length"]
         self.config = config
         self.model_layers = config["model_layers"]
+        self.token_config = config["token_config"]
         
     def __len__(self):
         return len(self.data)

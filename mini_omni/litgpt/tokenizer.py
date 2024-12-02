@@ -54,7 +54,7 @@ class Tokenizer:
                     self.eos_id = config.get("eos_token_id")
 
         elif (vocabulary_path := checkpoint_dir / "tokenizer.model").is_file():
-            from sentencepiece import SentencePieceProcessor
+            from sentencepiece import SentencePieceProcessor # type: ignore
 
             self.processor = SentencePieceProcessor(model_file=str(vocabulary_path))
             self.backend = "sentencepiece"

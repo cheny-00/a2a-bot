@@ -7,24 +7,53 @@ from mini_omni.litgpt.generate.base import sample
 import torch
 from modules.loss_functions import text_mask_cross_entropy
 from modules.loss_functions import audio_mask_cross_entropy
-from modules.cal_loss_process import cal_stage_1_loss
+from modules.cal_loss_process import cal_stage_1_loss, cal_stage_2_loss, cal_stage_3_loss
+
+
 
 def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
     val_loss, _, logit_t = cal_stage_1_loss(self, batch)
+    log_validation_metrics(self, val_loss, logit_t, batch)
+    return val_loss
+
+def omni_stage_2_validation(self: pl.LightningModule, batch, batch_idx):
+    val_loss, _, logit_t = cal_stage_2_loss(self, batch)
+    log_validation_metrics(self, val_loss, logit_t, batch)
+    return val_loss
+
+def omni_stage_3_validation(self: pl.LightningModule, batch, batch_idx):
+    alpha = 0.5
+    losses, _, logit_t = cal_stage_3_loss(self, batch, alpha)
+    val_loss = losses["loss"]
+    log_validation_metrics(self, val_loss, logit_t, batch)
+    return val_loss
+
+def log_validation_metrics(self, val_loss, logit_t, batch):
+    """Shared validation logging function for all stages
+    Args:
+        val_loss: validation loss value
+        logit_t: text logits from model output
+        batch: input batch dictionary
+    """
+    # Log validation loss
     self.log(
         f"{self.task}/val_loss",
         val_loss,
         on_step=False,
         on_epoch=True,
         prog_bar=True,
-        batch_size=len(batch["task"]),
-        sync_dist=self.is_distributed
+        batch_size=len(batch["task"]) if "task" in batch else None,
+        sync_dist=getattr(self, "is_distributed", False)
     )
+
     if self.metrics is not None:
         pred_ids = sample(logit_t)
-        target_text_token = batch["target_text_token"]
+        assert "target_text_token" in batch, "target_text_token is not in batch"
+        tokens_to_check = batch["target_text_token"]
+        
+        # Log accuracy if metric exists
         if "val_text_acc" in self.metrics:
-            text_acc = self.val_text_acc.update(pred_ids, target_text_token)
+            text_acc = self.val_text_acc.update(pred_ids, tokens_to_check)
             current_acc = self.val_text_acc.compute()
             self.log(
                 f"{self.task}/val_text_acc",
@@ -32,11 +61,13 @@ def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
                 on_step=False,
                 on_epoch=True,
                 prog_bar=True,
-                sync_dist=self.is_distributed
+                sync_dist=getattr(self, "is_distributed", False)
             )
-        if "val_text_wer" in self.metrics:
+        
+        # Log WER if metric exists
+        if "val_text_wer" in self.metrics and hasattr(self, "tokenizer"):
             pred_texts = self.tokenizer.batch_decode(pred_ids)
-            target_texts = self.tokenizer.batch_decode(target_text_token)
+            target_texts = self.tokenizer.batch_decode(tokens_to_check)
             self.val_text_wer.update(pred_texts, target_texts)
             current_wer = self.val_text_wer.compute()
             self.log(
@@ -45,81 +76,6 @@ def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
                 on_step=False,
                 on_epoch=True,
                 prog_bar=True,
-                batch_size=len(batch["task"]),
-                sync_dist=self.is_distributed
+                batch_size=len(batch["task"]) if "task" in batch else None,
+                sync_dist=getattr(self, "is_distributed", False)
             )
-    
-    return val_loss
-
-
-def omni_stage_2_validation(self: pl.LightningModule, batch, batch_idx):
-    question_audio_feature = batch['question_audio_feature']
-    input_ids = batch['input_ids']
-    question_audio_length = batch['question_audio_length']
-    answer_token = batch['answer_token']
-    answer_token_length = batch['answer_token_length']
-    
-    _, logit_t = self(question_audio_feature, input_ids, whisper_lens=question_audio_length, task='AT')
-    max_length = answer_token.size(1)  # T (max sequence length)
-    text_indices = torch.arange(max_length, device=answer_token.device).unsqueeze(0)  # [1, T]
-    text_mask = text_indices < answer_token_length.unsqueeze(1)
-    
-    val_loss = text_mask_cross_entropy(logit_t, answer_token, text_mask)
-    
-    self.log(
-        f"{self.task}/val_loss",
-        val_loss,
-        on_step=False,
-        on_epoch=True,
-        prog_bar=True,
-    )
-    if self.metrics is not None and "val_text_acc" in self.metrics:
-        pred_ids = sample(logit_t)
-        text_acc = self.val_text_acc.update(pred_ids, answer_token)
-        self.log(
-            f"{self.task}/val_text_acc",
-            text_acc,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
-    
-    return val_loss
-
-def omni_stage_3_validation(self: pl.LightningModule, batch, batch_idx):
-    question_audio_feature = batch['question_audio_feature']
-    input_ids = batch['input_ids']
-    question_audio_length = batch['question_audio_length']
-    answer_token = batch['answer_token']
-    answer_token_mask = batch['answer_token_mask']
-    answer_snac_tokens = batch['answer_snac_tokens']
-    answer_padding_mask = batch['answer_padding_mask']
-    
-    logit_a, logit_t = self(question_audio_feature, input_ids, whisper_lens=question_audio_length, task='AT')
-    
-    
-    val_text_loss = text_mask_cross_entropy(logit_t, answer_token, answer_token_mask)
-    val_audio_loss, _ = audio_mask_cross_entropy(logit_a, answer_snac_tokens, answer_padding_mask)
-    
-    alpha = 0.5
-    val_loss = alpha * val_text_loss + (1 - alpha) * val_audio_loss
-
-    self.log(
-        f"{self.task}/val_loss",
-        val_loss,
-        on_step=False,
-        on_epoch=True,
-        prog_bar=True,
-    )
-    if self.metrics is not None and "val_text_acc" in self.metrics:
-        pred_ids = sample(logit_t)
-        text_acc = self.val_text_acc.update(pred_ids, answer_token)
-        self.log(
-            f"{self.task}/val_text_acc",
-            text_acc,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-        )
-    
-    return val_loss

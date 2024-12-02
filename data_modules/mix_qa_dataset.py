@@ -16,9 +16,10 @@ from utils.data_utils import (
 from pathlib import Path
 import typing as tp
 
+from data_modules.base_dataset import MiniOmniBaseDataset
 
 
-class MixQaDataset(Dataset):
+class MixQaDataset(MiniOmniBaseDataset):
     
     def __init__(
         self,
@@ -28,70 +29,30 @@ class MixQaDataset(Dataset):
         config: tp.Dict,
         train=True,
     ):
+        super().__init__(data_dir, whisper_model, tokenizer, config, train)
         
-        data_dir = Path(data_dir)
-        assert data_dir.exists(), f"{data_dir} NOT EXISTS!"
-
-        self.data = self._load_data(data_dir)
-        self.whisper_model = whisper_model
-        self.tokenizer = tokenizer
-        self.max_seq_length = config["max_seq_length"]
-        self.config = config
-        self.model_layers = config["model_layers"]
-        self.token_config = config["token_config"]
-    
-    def __len__(self):
-        return len(self.data)
-    
-    @staticmethod
-    def _load_data(data_dir):
-        df = pd.read_parquet(data_dir)
-        return df
-    
-    def _get_audio_embeddings(self, audio_info):
-        mel, leng = load_audio_from_bytes(audio_info)
-        audio_feature = get_whisper_embeddings(self.whisper_model, mel)
-        return audio_feature, leng
         
     def __getitem__(self, item):
         
         data = self.data.iloc[item]
+        self.target_text_name = "answer"
         
-        question_audio = data["question_audio"]["bytes"]
+        features = self._collate_common_features(data)
         
         answer_snac = data["answer_snac"]
         answer_snac_tokens, _ = construct_snac_tokens(answer_snac)
-        answer_snac_tokens, answer_padding_mask = pad_snac_tokens(self.config["token_config"], answer_snac_tokens, self.max_seq_length)
-        
-        
+        answer_snac_tokens, answer_snac_padding_mask = pad_snac_tokens(self.config["token_config"], answer_snac_tokens, self.max_seq_length)
         
         question_tokens = self.tokenizer.encode(data["question"])
-        
-        question_audio_feature, question_audio_length = self._get_audio_embeddings(question_audio)
-        question_audio_feature = pad_to_max_length(question_audio_feature, self.max_seq_length)
-        question_audio_feature = question_audio_feature.squeeze(0)
+        question_tokens = pad_text_tokens(self.token_config, question_tokens, self.max_seq_length)
         
         audio_input_ids = get_audio_template(self.token_config, self.max_seq_length, self.model_layers)
-
-        question_tokens = pad_text_tokens(self.token_config, question_tokens, self.max_seq_length)
-
-        answer_token, answer_token_mask = get_target_text_token(data["answer"], self.tokenizer, self.config["token_config"], self.max_seq_length)
-        
-        features = dict()
-        
-        features["answer_snac_tokens"] = torch.tensor(answer_snac_tokens, dtype=torch.long)
-        features["answer_padding_mask"] = torch.tensor(answer_padding_mask, dtype=torch.bool)
-        
-        features["question_audio_feature"] = question_audio_feature
-        features["question_audio_length"] = question_audio_length   
-        
-        # features["question_tokens"] = question_tokens.to(torch.long)
-        features["answer_token"] = answer_token
-        features["answer_token_mask"] = answer_token_mask
-        
-        
         input_ids = audio_input_ids + [question_tokens]
         features["input_ids"] = input_ids
+
+        features["answer_snac_tokens"] = torch.tensor(answer_snac_tokens, dtype=torch.long)
+        features["answer_snac_padding_mask"] = torch.tensor(answer_snac_padding_mask, dtype=torch.bool)
+        features["task"] = "A1A2|A1T2"
 
         return features
         
