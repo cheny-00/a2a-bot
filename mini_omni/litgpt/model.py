@@ -246,12 +246,13 @@ class GPT(nn.Module):
             # passing `attn_mask` to SDPA disables the flash implementation. since we only need the mask
             # for the kv-cache support (only during inference), we only create it in that situation
             self.mask_cache = build_mask_cache(max_seq_length, device)
+        self.device = device
 
     def clear_kv_cache(self) -> None:
         self.mask_cache = None
         for block in self.transformer.h:
             block.attn.kv_cache = None
-
+        self.device = None
 
 class Block(nn.Module):
 

@@ -138,7 +138,7 @@ class ModelInterface(pl.LightningModule):
                 continue
             _score = self.__getattr__(metric_name).compute()
             print(f"\n {metric_name}: {_score}")
-            self.log(f"====== {prefix}_{metric_name}_epoch ======", _score, prog_bar=False, sync_dist=self.is_distributed)
+            self.log(f"{metric_name}_epoch", _score, prog_bar=False, sync_dist=self.is_distributed)
             self.__getattr__(metric_name).reset()
 
 
@@ -165,11 +165,13 @@ class ModelInterface(pl.LightningModule):
                 metric = torchmetrics.Accuracy(task="multiclass", num_classes=self.total_text_vocab_size)
             elif metric_name.endswith("_wer"):
                 metric = WordErrorRate()
+            elif metric_name.endswith("_perplexity"):
+                metric = torchmetrics.Perplexity(ignore_index=-100) #TODO modify the ignore_index
             self.__setattr__(metric_name, metric)
     
     
     def configure_metrics(self):
-        self.metrics = ["val_text_wer"]
+        self.metrics = ["val_text_wer", "val_text_perplexity"]
         self.initialize_metrics(self.metrics)
         
 
