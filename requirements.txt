@@ -18,6 +18,7 @@ torchmetrics
 fire
 ffmpeg-python
 sentencepiece
+deepspeed
 # for training
 tensorboard
 # for dev
