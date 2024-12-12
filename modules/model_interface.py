@@ -26,7 +26,7 @@ import pytorch_lightning as pl
 
 from torchmetrics import WordErrorRate
 
-
+from utils.logging_utils import show_optimizer_details
 
 
 class ModelInterface(pl.LightningModule):
@@ -114,8 +114,9 @@ class ModelInterface(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer_name = self.hparams.optimizer_name
-        optimizer_params = self.config.get(optimizer_name, {})
-        print("Optimizer params:", optimizer_params)
+        optimizer_params = self.config.get(self.hparams.task, {})
+        
+        show_optimizer_details(optimizer_name, optimizer_params)
         optimizer_params["lr"] = self.hparams.lr
         optimizer = instantiate_torch_optimizer(optimizer_name, self.parameters(), **optimizer_params)
         scheduler = self.get_scheduler(optimizer, self.hparams.scheduler_name)
@@ -157,6 +158,7 @@ class ModelInterface(pl.LightningModule):
         if self.metrics is None:
             return
         self.get_metrics(is_train=False)
+        self._show_text_count = 0
     
     
     def initialize_metrics(self, metrics):

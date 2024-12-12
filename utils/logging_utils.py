@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Union
 from rich.style import Style
-
+from rich.console import Console
+from rich.table import Table
 
 @dataclass
 class LightRichProgressBarTheme:
@@ -31,3 +32,25 @@ class LightRichProgressBarTheme:
     metrics: Union[str, "Style"] = "grey37"
     metrics_text_delimiter: str = " "
     metrics_format: str = ".3f"
+    
+    
+
+def show_optimizer_details(optimizer_name, optimizer_params):
+    console = Console()
+
+    # Create a Rich Table
+    table = Table(title="Optimizer Details", show_header=True, header_style="bold magenta")
+
+    # Add columns
+    table.add_column("Parameter", justify="right", style="cyan", no_wrap=True)
+    table.add_column("Value", justify="left", style="green")
+
+    # Add optimizer name
+    table.add_row("Optimizer Name", optimizer_name)
+
+    # Add optimizer parameters
+    for param, value in optimizer_params.items():
+        table.add_row(param, str(value))
+
+    # Print the table to the console
+    console.print(table)
