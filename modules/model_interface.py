@@ -97,13 +97,15 @@ class ModelInterface(pl.LightningModule):
                     warmup_iters = warmup_iters * max_iters
                 warmup_iters = int(warmup_iters)
 
-            return schedulers.litgpt_get_lr(
-                learning_rate=self.hparams.lr,
-                it=it,
-                warmup_iters=warmup_iters,
-                max_iters=max_iters,
-                min_lr=self.hparams.min_lr
-            )
+            return (
+                    schedulers.litgpt_get_lr(
+                        learning_rate=self.hparams.lr,
+                        it=it,
+                        warmup_iters=warmup_iters,
+                        max_iters=max_iters,
+                        min_lr=self.hparams.min_lr
+                ) / self.hparams.lr
+            ) # return a coefficient, scheduler will multiply it by base lr
 
         scheduler_function = lrs.LambdaLR(optimizer, lr_lambda)
 
