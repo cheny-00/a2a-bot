@@ -4,6 +4,7 @@
 
 
 import os
+import torch
 import pandas as pd
 from pathlib import Path
 from typing import Dict, AnyStr
@@ -15,9 +16,10 @@ from utils.data_utils import (
     load_audio_from_path,
     get_whisper_embeddings,
     pad_to_max_length,
-    get_target_text_token
+    get_target_text_token,
+    construct_snac_tokens,
+    pad_snac_tokens
 )
-
 
 class MiniOmniBaseDataset(Dataset):
     def __init__(
@@ -63,20 +65,38 @@ class MiniOmniBaseDataset(Dataset):
         return audio_feature, audio_length
     
     
-    def _collate_common_features(self, data: pd.Series):
+    def _collate_common_features(self, data: pd.Series, task: str):
         features = dict()
         # audio feature, audio length
-        audio_feature, audio_length = self._get_audio_embeddings(data)
-        audio_feature = pad_to_max_length(audio_feature, self.max_seq_length)
-        audio_feature = audio_feature.squeeze(0)
+        if task.startswith("A"):
+            audio_feature, audio_length = self._get_audio_embeddings(data)
+            audio_feature = pad_to_max_length(audio_feature, self.max_seq_length, self.token_config["pad_a"])
+            audio_feature = audio_feature.squeeze(0)
+        elif task.startswith("T"):
+            audio_feature = None
+            audio_length = None
+        else:
+            raise ValueError(f"Invalid task: {task}")
         
         features["audio_feature"] = audio_feature
         features["audio_length"] = audio_length
         
         # target text token, target text token mask
-        target_text_token, target_text_token_mask = get_target_text_token(data[self.target_text_name], self.tokenizer, self.config["token_config"], self.max_seq_length)
-        features["target_text_token"] = target_text_token
-        features["target_text_token_mask"] = target_text_token_mask
-        features["target_text"] = data[self.target_text_name]
+        if task.startswith("T"):
+            target_text_token, target_text_token_mask = get_target_text_token(data[self.target_text_name], self.tokenizer, self.config["token_config"], self.max_seq_length)
+            features["target_token"] = target_text_token
+            features["target_token_mask"] = target_text_token_mask
+            features["target"] = data[self.target_text_name]
+        elif task.startswith("A"):
+            answer_snac = data["answer_snac"]
+            answer_snac_tokens, _ = construct_snac_tokens(answer_snac)
+            answer_snac_tokens, answer_snac_padding_mask = pad_snac_tokens(self.token_config, answer_snac_tokens, self.max_seq_length)
+            features["target_token"] = answer_snac_tokens
+            features["target_token_mask"] = answer_snac_padding_mask
+            features["target"] = data["answer_snac"]
+        else:
+            raise ValueError(f"Invalid task: {task}")
+        
+        
         
         return features

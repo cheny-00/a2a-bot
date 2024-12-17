@@ -77,18 +77,18 @@ def get_whisper_embeddings(whisper_model, mel, leng):
     return audio_feature
 
 
-def get_input_template(token_config, seq_length, model_layers=8):
+def get_input_template(token_config, seq_length, model_layers=8, speical_token_name:str="answer_a"):
 
     input_ids = list()
     for i in range(model_layers - 1):
         audio_input_token = layershift(token_config["input_a"], i)
         audio_pad_token = layershift(token_config["pad_a"], i)
         audio_end_token = layershift(token_config["eoa"], i)
-        audio_special_token = layershift(token_config["answer_a"], i)
+        audio_special_token = layershift(token_config[speical_token_name], i)
         input_tokens = [audio_input_token] + [audio_pad_token] * seq_length + [audio_end_token, audio_special_token]
         input_tokens = torch.tensor(input_tokens)
         input_ids.append(input_tokens)
-    text_input_tokens = [token_config["input_t"]] + [token_config["pad_t"]] * seq_length + [token_config["eot"], token_config["answer_t"]]
+    text_input_tokens = [token_config["input_t"]] + [token_config["pad_t"]] * seq_length + [token_config["pad_t"], token_config["answer_t"]]
     text_input_tokens = torch.tensor(text_input_tokens)
     input_ids.append(text_input_tokens)
     input_ids = [inp.detach().contiguous() for inp in input_ids]
@@ -238,7 +238,4 @@ def get_target_text_token(text: tp.AnyStr, tokenizer, token_config, max_seq_leng
         token_mask = torch.cat([token_mask, mask_padding])
     
     return tokens, token_mask
-    
-    
-    
     

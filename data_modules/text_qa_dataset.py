@@ -34,17 +34,18 @@ class TextQaDataset(MiniOmniBaseDataset):
     def __getitem__(self, item):
         data = self.data.iloc[item]
         self.target_text_name = "answer"
+        task = "T1T2"
         
-        features = self._collate_common_features(data)
+        features = self._collate_common_features(data, task)
         
-        audio_input_ids = get_audio_template(self.token_config, self.max_seq_length, self.model_layers)
         question_tokens = self.tokenizer.encode(data["question"])
         question_tokens = pad_text_tokens(self.token_config, question_tokens, self.max_seq_length)
         
+        audio_input_ids = torch.full((7, self.max_seq_length), self.token_config["pad_a"])
         input_ids = audio_input_ids + [question_tokens]
         features["input_ids"] = input_ids
         
-        features["task"] = "A1T2"
+        features["task"] = task
         
         return features
     

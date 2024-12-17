@@ -22,11 +22,11 @@ class AsrDataset(MiniOmniBaseDataset):
     def __getitem__(self, item):
         data = self.data.iloc[item]
         self.target_text_name = "question"
-        
-        features = self._collate_common_features(data)
-        input_ids = get_input_template(self.config["token_config"], self.max_seq_length - 3, self.model_layers)
+        task = "A1T1"
+        features = self._collate_common_features(data, task)
+        input_ids = get_input_template(self.config["token_config"], self.max_seq_length - 3, self.model_layers, speical_token_name="pad_a")
 
         features['input_ids'] = input_ids
-        features['task'] = "A1T1"
+        features['task'] = task
 
         return features
