@@ -25,8 +25,9 @@ def cal_text_loss(batch, logit_t, pad_t=-100):
     return loss_text
 
 def cal_audio_loss(batch, logit_a, pad_t=-100):
-    answer_snac_tokens = batch['answer_snac_tokens']
-    answer_snac_padding_mask = batch['answer_snac_padding_mask']
+    answer_snac_tokens = batch['target_snac_token']
+    answer_snac_padding_mask = batch['target_snac_token_mask']
+        
     loss_audio, _ = audio_mask_cross_entropy(logit_a, answer_snac_tokens, answer_snac_padding_mask, ignore_index=pad_t)
     return loss_audio
 
@@ -35,22 +36,23 @@ def cal_audio_loss(batch, logit_a, pad_t=-100):
 
 def cal_stage_1_loss(self: pl.LightningModule, batch):
     logit_a, logit_t = cal_mini_omni_logits(self, batch)
-    loss_text = cal_text_loss(batch, logit_t)
-    loss = loss_text
-    return loss, logit_a, logit_t
+    loss_text = cal_text_loss(batch, logit_t, self.pad_t)
+    losses = {"text_loss": loss_text, "loss": loss_text}
+    return losses, logit_a, logit_t
 
 
 def cal_stage_2_loss(self: pl.LightningModule, batch):
     logit_a, logit_t = cal_mini_omni_logits(self, batch)
-    loss_text = cal_text_loss(batch, logit_t)
-    loss = loss_text
-    return loss, logit_a, logit_t
+    loss_text = cal_text_loss(batch, logit_t, self.pad_t)
+    losses = {"text_loss": loss_text, "loss": loss_text}
+    return losses, logit_a, logit_t
 
 
 def cal_stage_3_loss(self: pl.LightningModule, batch, alpha=0.5):
     logit_a, logit_t = cal_mini_omni_logits(self, batch)
-    loss_text = cal_text_loss(batch, logit_t)
-    loss_audio = cal_audio_loss(batch, logit_a)
+    loss_text = cal_text_loss(batch, logit_t, self.pad_t)
+    loss_audio = cal_audio_loss(batch, logit_a, self.pad_a)
+    
     loss = alpha * loss_text + (1 - alpha) * loss_audio
     losses = {"text_loss": loss_text, "audio_loss": loss_audio, "loss": loss}
     

@@ -11,7 +11,8 @@ from utils.data_utils import (
     pad_text_tokens,
     pad_snac_tokens,
     construct_snac_tokens,
-    get_target_text_token
+    get_target_text_token,
+    get_input_template
 )
 from pathlib import Path
 import typing as tp
@@ -19,7 +20,7 @@ import typing as tp
 from data_modules.base_dataset import MiniOmniBaseDataset
 
 
-class MixQaDataset(MiniOmniBaseDataset):
+class VoiceQaDataset(MiniOmniBaseDataset):
     
     def __init__(
         self,
@@ -36,23 +37,17 @@ class MixQaDataset(MiniOmniBaseDataset):
         
         data = self.data.iloc[item]
         self.target_text_name = "answer"
+        task = "A1A2"
         
-        features = self._collate_common_features(data)
-        
-        answer_snac = data["answer_snac"]
-        answer_snac_tokens, _ = construct_snac_tokens(answer_snac)
-        answer_snac_tokens, answer_snac_padding_mask = pad_snac_tokens(self.config["token_config"], answer_snac_tokens, self.max_seq_length)
+        features = self._collate_common_features(data, task)
         
         question_tokens = self.tokenizer.encode(data["question"])
         question_tokens = pad_text_tokens(self.token_config, question_tokens, self.max_seq_length)
         
-        audio_input_ids = get_audio_template(self.token_config, self.max_seq_length, self.model_layers)
-        input_ids = audio_input_ids + [question_tokens]
+        input_ids = get_input_template(self.config["token_config"], self.max_seq_length - 3, self.model_layers, speical_token_name="answer_a")
         features["input_ids"] = input_ids
 
-        features["answer_snac_tokens"] = torch.tensor(answer_snac_tokens, dtype=torch.long)
-        features["answer_snac_padding_mask"] = torch.tensor(answer_snac_padding_mask, dtype=torch.bool)
-        features["task"] = "A1A2"
+        features["task"] = task
 
         return features
         

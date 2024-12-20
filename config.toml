@@ -34,7 +34,7 @@ min_lr = 4e-6
 max_steps = 27000
 warmup_steps = 0.1
 scheduler_interval = "step"
-dataset = "text_qa_dataset"
+dataset = "asr_dataset"
 
 [stage_3]
 lr = 4e-4
@@ -42,4 +42,4 @@ min_lr = 4e-6
 max_steps = 50000
 warmup_steps = 0.1
 scheduler_interval = "step"
-dataset = "mix_qa_dataset"
+dataset = "voice_qa_dataset"

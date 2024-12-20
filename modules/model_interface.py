@@ -55,6 +55,8 @@ class ModelInterface(pl.LightningModule):
         self.tokenizer = tokenizer
         self.token_config = self.config["token_config"]
         self.total_text_vocab_size = self.token_config["padded_text_vocab_size"]
+        self.pad_t = self.token_config["pad_t"]
+        self.pad_a = self.token_config["pad_a"]
         
         self.loss_function = {}
         

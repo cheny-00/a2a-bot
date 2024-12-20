@@ -34,6 +34,7 @@ class MiniOmniBaseDataset(Dataset):
         assert data_dir.exists(), f"{data_dir} NOT EXISTS!"
         self.data_dir = data_dir
 
+        self.model_name = config["model_name"]
         self.data = self._load_data(data_dir)
         self.whisper_model = whisper_model
         self.tokenizer = tokenizer
@@ -73,27 +74,37 @@ class MiniOmniBaseDataset(Dataset):
             audio_feature = pad_to_max_length(audio_feature, self.max_seq_length, self.token_config["pad_a"])
             audio_feature = audio_feature.squeeze(0)
         elif task.startswith("T"):
-            audio_feature = None
-            audio_length = None
+            audio_feature = torch.zeros((self.max_seq_length, self.config[self.model_name].whisper_adapter_dim))
+            audio_length = 0
         else:
             raise ValueError(f"Invalid task: {task}")
         
         features["audio_feature"] = audio_feature
         features["audio_length"] = audio_length
         
+        target_text_token, target_text_token_mask = get_target_text_token(data[self.target_text_name], self.tokenizer, self.config["token_config"], self.max_seq_length)
+        answer_snac = data["answer_snac"]
+        answer_snac_tokens, _ = construct_snac_tokens(answer_snac)
+        answer_snac_tokens, answer_snac_padding_mask = pad_snac_tokens(self.config["token_config"], answer_snac_tokens, self.max_seq_length)
+        answer_snac_tokens = torch.tensor(answer_snac_tokens, dtype=torch.long)
+        answer_snac_padding_mask = torch.tensor(answer_snac_padding_mask, dtype=torch.bool)
+        
         # target text token, target text token mask
-        if task.startswith("T"):
-            target_text_token, target_text_token_mask = get_target_text_token(data[self.target_text_name], self.tokenizer, self.config["token_config"], self.max_seq_length)
-            features["target_token"] = target_text_token
-            features["target_token_mask"] = target_text_token_mask
-            features["target"] = data[self.target_text_name]
-        elif task.startswith("A"):
-            answer_snac = data["answer_snac"]
-            answer_snac_tokens, _ = construct_snac_tokens(answer_snac)
-            answer_snac_tokens, answer_snac_padding_mask = pad_snac_tokens(self.token_config, answer_snac_tokens, self.max_seq_length)
-            features["target_token"] = answer_snac_tokens
-            features["target_token_mask"] = answer_snac_padding_mask
-            features["target"] = data["answer_snac"]
+        if task[2:].startswith("T"):
+            features["target_text_token"] = target_text_token
+            features["target_text_token_mask"] = target_text_token_mask
+            features["target_text"] = data[self.target_text_name]
+            
+            features["target_snac_token"] = torch.ones_like(answer_snac_tokens) * self.token_config["pad_a"]
+            features["target_snac_token_mask"] = torch.zeros_like(answer_snac_padding_mask)
+            
+        elif task[2:].startswith("A"):
+            features["target_text_token"] = torch.ones_like(target_text_token) * self.token_config["pad_t"]
+            features["target_text_token_mask"] = torch.zeros_like(target_text_token_mask)
+            features["target_text"] = data[self.target_text_name]
+            
+            features["target_snac_token"] = answer_snac_tokens
+            features["target_snac_token_mask"] = answer_snac_padding_mask
         else:
             raise ValueError(f"Invalid task: {task}")
         

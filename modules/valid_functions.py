@@ -10,39 +10,59 @@ from modules.loss_functions import audio_mask_cross_entropy
 from modules.cal_loss_process import cal_stage_1_loss, cal_stage_2_loss, cal_stage_3_loss
 from mini_omni.litgpt.generate.base import generate_AT, generate_ASR
 
+
 from rich.console import Console
 from rich.table import Table
 from rich import box
 
 
 def omni_stage_1_validation(self: pl.LightningModule, batch, batch_idx):
-    val_loss, _, logit_t = cal_stage_1_loss(self, batch)
-    log_validation_metrics(self, val_loss, logit_t, batch, batch_idx)
-    return val_loss
+    losses, _, logit_t = cal_stage_1_loss(self, batch)
+    log_validation_metrics(self, losses, logit_t, batch, batch_idx)
+    return losses["loss"]
 
 def omni_stage_2_validation(self: pl.LightningModule, batch, batch_idx):
-    val_loss, _, logit_t = cal_stage_2_loss(self, batch)
-    log_validation_metrics(self, val_loss, logit_t, batch, batch_idx)
-    return val_loss
+    losses, _, logit_t = cal_stage_2_loss(self, batch)
+    log_validation_metrics(self, losses, logit_t, batch, batch_idx)
+    return losses["loss"]
 
 def omni_stage_3_validation(self: pl.LightningModule, batch, batch_idx):
     alpha = 0.5
     losses, _, logit_t = cal_stage_3_loss(self, batch, alpha)
-    val_loss = losses["loss"]
-    log_validation_metrics(self, val_loss, logit_t, batch, batch_idx)
-    return val_loss
+    log_validation_metrics(self, losses, logit_t, batch, batch_idx)
+    return losses["loss"]
 
-def log_validation_metrics(self, val_loss, logit_t, batch, batch_idx):
+def log_validation_metrics(self, losses, logit_t, batch, batch_idx):
     """Shared validation logging function for all stages
     Args:
-        val_loss: validation loss value
+        losses: validation losses
         logit_t: text logits from model output
         batch: input batch dictionary
     """
     # Log validation loss
+    if "text_loss" in losses:
+        self.log(
+            f"{self.task}/val_text_loss",
+            losses["text_loss"],
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=len(batch["task"]) if "task" in batch else None,
+            sync_dist=getattr(self, "is_distributed", False)
+        )
+    if "audio_loss" in losses:
+        self.log(
+            f"{self.task}/val_audio_loss",
+            losses["audio_loss"],
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=getattr(self, "is_distributed", False)
+        )
+    
     self.log(
         f"{self.task}/val_loss",
-        val_loss,
+        losses["loss"],
         on_step=False,
         on_epoch=True,
         prog_bar=True,
@@ -50,10 +70,15 @@ def log_validation_metrics(self, val_loss, logit_t, batch, batch_idx):
         sync_dist=getattr(self, "is_distributed", False)
     )
 
-    if self.metrics is not None:
+    # text metrics
+    text_batch_mask = [1 if _task[2:].startswith("T") else 0 for _task in batch["task"]]
+    if self.metrics is not None and sum(text_batch_mask) > 0:
+        text_batch_mask = torch.tensor(text_batch_mask, device=logit_t.device)
+        logit_t = logit_t * text_batch_mask.view(-1, 1, 1)
         pred_ids = sample(logit_t)
         assert "target_text_token" in batch, "target_text_token is not in batch"
-        tokens_to_check = batch["target_text_token"]
+        print(batch["target_text_token"].shape)
+        tokens_to_check = batch["target_text_token"] * text_batch_mask.view(-1, 1)
         
         # Log accuracy if metric exists
         if "val_text_acc" in self.metrics:
@@ -114,12 +139,19 @@ def add_text_samples(self, batch, batch_idx, prefix="", sample_every_n=200):
     """
     # if batch_idx % sample_every_n != 0:  # Only process every N batches
     #     return
-        
+    tasks = batch["task"]
+    text_batch_mask = [1 if _task[2:].startswith("T") else 0 for _task in tasks]
+    if sum(text_batch_mask) == 0:
+        return 
+    device = batch["audio_feature"].device
+    text_batch_mask = torch.tensor(text_batch_mask, device=device)
+    text_batch_id = torch.argmax((text_batch_mask == 1).float(), dim=-1)
+    text_batch_id = 1
     single_sample = {
-        "audio_feature": batch["audio_feature"][:1],
-        "input_ids": [_b[:1] for _b in batch["input_ids"]],
-        "audio_length": batch["audio_length"][:1],
-        "task": batch["task"][:1]
+        "audio_feature": batch["audio_feature"][text_batch_id].unsqueeze(0),
+        "input_ids": [_b[text_batch_id].unsqueeze(0) for _b in batch["input_ids"]],
+        "audio_length": batch["audio_length"][text_batch_id].unsqueeze(0),
+        "task": batch["task"][text_batch_id]
     }
     pred_tokens = generate_AT(self.model, single_sample["audio_feature"], 
                            single_sample["input_ids"], single_sample["audio_length"], 

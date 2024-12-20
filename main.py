@@ -55,6 +55,7 @@ def main(args):
     model_config = Config.from_file(Path(args.ckpt_dir) / "model_config.yaml")
     print("model_config", model_config)
     config[args.model_name] = model_config
+    config["model_name"] = args.model_name
     get_task_config(args.train_params, config)
     task = args.train_params["task"]
     if task in config and "dataset" in config[task]:

@@ -238,4 +238,20 @@ def get_target_text_token(text: tp.AnyStr, tokenizer, token_config, max_seq_leng
         token_mask = torch.cat([token_mask, mask_padding])
     
     return tokens, token_mask
+
+
+def auto_expand_mask(mask, target_shape):
+    """
+    Automatically expands a 1D mask to match the target shape.
     
+    Args:
+        mask (torch.Tensor): Input 1D mask of shape (B,).
+        target_shape (tuple): Desired shape to expand to.
+    
+    Returns:
+        torch.Tensor: Expanded mask with appropriate broadcasting.
+    """
+    # Dynamically unsqueeze the mask to match the dimensions
+    while len(mask.shape) < len(target_shape):
+        mask = mask.unsqueeze(-1)  # Add new dimensions to the end
+    return mask
