@@ -14,19 +14,16 @@ text_special_tokens = 64
 audio_special_tokens = 64
 
 
-[task_mapping]
-stage_1 = "A1T1"
-stage_2 = "AT"
-stage_3 = "A1A2"
-
 [stage_1]
 lr = 1e-3
 min_lr = 4e-6
 max_steps = 17000
 warmup_steps = 0.1
 scheduler_interval = "step"
-dataset = "asr_dataset"
-
+datasets = "asr_dataset"
+sampling_weights = [1.0]
+train_data_dir = "datasets/train"
+valid_data_dir = "random"
 
 [stage_2]
 lr = 4e-4
@@ -34,7 +31,10 @@ min_lr = 4e-6
 max_steps = 27000
 warmup_steps = 0.1
 scheduler_interval = "step"
-dataset = "asr_dataset"
+datasets = ["asr_dataset", "text_qa_dataset"]
+sampling_weights = [1.0, 1.0]
+train_data_dir = "datasets/train"
+valid_data_dir = "random"
 
 [stage_3]
 lr = 4e-4
@@ -42,4 +42,7 @@ min_lr = 4e-6
 max_steps = 50000
 warmup_steps = 0.1
 scheduler_interval = "step"
-dataset = "voice_qa_dataset"
+datasets = ["asr_dataset", "text_qa_dataset", "voice_qa_dataset"]
+sampling_weights = [1.0, 1.0, 1.0]
+train_data_dir = "datasets/train"
+valid_data_dir = "random"

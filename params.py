@@ -91,7 +91,7 @@ def get_args():
     data_config.add_argument("--num_workers", type=int, default=8, dest="data_config_num_workers")
     data_config.add_argument("--batch_size", type=int, default=16, dest="data_config_batch_size")
     ## load dataset
-    data_config.add_argument("--train_data_dir", type=str, default="dataset/train", dest="data_config_train_data_dir")
+    data_config.add_argument("--train_data_dir", type=str, dest="data_config_train_data_dir")
     data_config.add_argument("--valid_data_dir", type=str, default="random", dest="data_config_valid_data_dir")
 
     # trian config

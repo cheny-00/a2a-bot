@@ -77,7 +77,6 @@ def log_validation_metrics(self, losses, logit_t, batch, batch_idx):
         logit_t = logit_t * text_batch_mask.view(-1, 1, 1)
         pred_ids = sample(logit_t)
         assert "target_text_token" in batch, "target_text_token is not in batch"
-        print(batch["target_text_token"].shape)
         tokens_to_check = batch["target_text_token"] * text_batch_mask.view(-1, 1)
         
         # Log accuracy if metric exists

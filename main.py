@@ -48,6 +48,30 @@ def load_callbacks(model_name, version, task):
     return callbacks
 
 
+def update_params(args, config):
+    """
+    Update the parameters with the specific task config
+    """
+    task = args.train_params["task"]
+    if task not in config:
+        return task
+    if "datasets" in config[task]:
+        args.data_params["datasets"] = config[task]["datasets"]
+        print(f"========= Use datasets: {args.data_params['datasets']} for task: {task} =========")
+    if "train_data_dir" not in args.data_params:
+        if "train_data_dir" not in config[task]:
+            raise ValueError(f"train_data_dir not found in config for task: {task}")
+        args.data_params["train_data_dir"] = config[task]["train_data_dir"]
+        print(f"========= Use train_data_dir: {args.data_params['train_data_dir']} for task: {task} =========") 
+        
+    if "valid_data_dir" not in args.data_params:
+        if "valid_data_dir" not in config[task]:
+            raise ValueError(f"valid_data_dir not found in config for task: {task}")
+        args.data_params["valid_data_dir"] = config[task]["valid_data_dir"]
+        print(f"========= Use valid_data_dir: {args.data_params['valid_data_dir']} for task: {task} =========") 
+    return task
+
+
 
 def main(args):
     
@@ -57,10 +81,7 @@ def main(args):
     config[args.model_name] = model_config
     config["model_name"] = args.model_name
     get_task_config(args.train_params, config)
-    task = args.train_params["task"]
-    if task in config and "dataset" in config[task]:
-        args.data_params["dataset"] = config[task]["dataset"]
-        print(f"========= Use dataset: {args.data_params['dataset']} for task: {task} =========")
+    task = update_params(args, config)
     
     snac_model, whisper_model, tokenizer = load_models(config, args.ckpt_dir)
     
