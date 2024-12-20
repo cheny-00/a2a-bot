@@ -3,7 +3,7 @@
 # @Author  :   chy
 
 import inspect
-
+import pytorch_lightning as pl
 from lightning.pytorch.cli import instantiate_class
 
 
@@ -65,3 +65,14 @@ def get_group_parameters(args, group_name):
     return grouped_params
 
 
+def log_loss(self: pl.LightningModule, losses, batch_size, sync_dist):
+    for key, value in losses.items():
+        self.log(
+            f"{self.task}/{key}",
+            value,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=batch_size,
+            sync_dist=sync_dist
+        )

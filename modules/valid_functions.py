@@ -5,11 +5,9 @@
 import pytorch_lightning as pl
 from mini_omni.litgpt.generate.base import sample
 import torch
-from modules.loss_functions import text_mask_cross_entropy
-from modules.loss_functions import audio_mask_cross_entropy
 from modules.cal_loss_process import cal_stage_1_loss, cal_stage_2_loss, cal_stage_3_loss
-from mini_omni.litgpt.generate.base import generate_AT, generate_ASR
-
+from mini_omni.litgpt.generate.base import generate_AT
+from utils.utils import log_loss
 
 from rich.console import Console
 from rich.table import Table
@@ -40,35 +38,8 @@ def log_validation_metrics(self, losses, logit_t, batch, batch_idx):
         batch: input batch dictionary
     """
     # Log validation loss
-    if "text_loss" in losses:
-        self.log(
-            f"{self.task}/val_text_loss",
-            losses["text_loss"],
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-            batch_size=len(batch["task"]) if "task" in batch else None,
-            sync_dist=getattr(self, "is_distributed", False)
-        )
-    if "audio_loss" in losses:
-        self.log(
-            f"{self.task}/val_audio_loss",
-            losses["audio_loss"],
-            on_step=False,
-            on_epoch=True,
-            prog_bar=True,
-            sync_dist=getattr(self, "is_distributed", False)
-        )
-    
-    self.log(
-        f"{self.task}/val_loss",
-        losses["loss"],
-        on_step=False,
-        on_epoch=True,
-        prog_bar=True,
-        batch_size=len(batch["task"]) if "task" in batch else None,
-        sync_dist=getattr(self, "is_distributed", False)
-    )
+    val_losses = {f"val_{k}": v for k, v in losses.items()}
+    log_loss(self, val_losses, len(batch["task"]), self.is_distributed)
 
     # text metrics
     text_batch_mask = [1 if _task[2:].startswith("T") else 0 for _task in batch["task"]]
@@ -89,6 +60,7 @@ def log_validation_metrics(self, losses, logit_t, batch, batch_idx):
                 on_step=False,
                 on_epoch=True,
                 prog_bar=True,
+                batch_size=len(batch["task"]) if "task" in batch else None,
                 sync_dist=getattr(self, "is_distributed", False)
             )
 
@@ -102,6 +74,7 @@ def log_validation_metrics(self, losses, logit_t, batch, batch_idx):
                 on_step=False,
                 on_epoch=True,
                 prog_bar=True,
+                batch_size=len(batch["task"]) if "task" in batch else None,
                 sync_dist=getattr(self, "is_distributed", False)
             )
         
