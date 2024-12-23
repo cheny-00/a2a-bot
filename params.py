@@ -66,7 +66,9 @@ def get_args():
     parser.add_argument("--model_name", type=str, default="mini_omni")
     parser.add_argument("--ckpt_dir", type=str, default="checkpoint/")
     parser.add_argument("--log_dir", type=str, default=".logs/")
-
+    parser.add_argument("--reuse_state_dict", type=str, default=None)
+    parser.add_argument("--resume_from_checkpoint", type=str, default=None)
+    
     # deepspeed config
     parser.add_argument("--deepspeed_config_path", type=str, default="./deepspeed_config.json")
     parser.add_argument("--deepspeed", action="store_true", default=False)
@@ -117,6 +119,8 @@ def get_args():
     
     train_config.add_argument("--min_lr", type=float, default=1e-6, dest="train_config_min_lr")
     train_config.add_argument("--scheduler_interval", type=str, default="step", dest="train_config_scheduler_interval")
+    train_config.add_argument("--n_show_text_times", type=int, default=2, dest="train_config_n_show_text_times")
+    
 
     args = parser.parse_args()
 

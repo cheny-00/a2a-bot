@@ -2,10 +2,12 @@
 # @Time    :   2024/10/31
 # @Author  :   chy
 
+import os
+import re
 import inspect
 import pytorch_lightning as pl
 from lightning.pytorch.cli import instantiate_class
-
+from pathlib import Path
 
 def get_mapped_kwargs(func, kwargs):
     sig = inspect.signature(func)
@@ -76,3 +78,33 @@ def log_loss(self: pl.LightningModule, losses, batch_size, sync_dist):
             batch_size=batch_size,
             sync_dist=sync_dist
         )
+        
+
+def fix_version_path(args, checkpoint_path):
+    if checkpoint_path is None or not checkpoint_path.startswith("version"):
+        return checkpoint_path
+    
+    current_path = Path(os.getcwd())
+    checkpoint_path = current_path / args.log_dir / args.model_name / checkpoint_path / "checkpoints"
+    
+    # Confirm the existence of the directory
+    if not checkpoint_path.exists() or not checkpoint_path.is_dir():
+        raise FileNotFoundError(f"Checkpoint directory {checkpoint_path} does not exist.")
+    
+    last_ckpt = checkpoint_path / "last.ckpt"
+    if last_ckpt.exists():
+        return last_ckpt
+
+    checkpoint_files = list(checkpoint_path.glob("best-*.ckpt"))
+    if not checkpoint_files:
+        raise FileNotFoundError(f"No checkpoint files found in {checkpoint_path} following the filename pattern.")
+    
+    def parse_validation_loss(file):
+        match = re.search(r"validation_loss=([0-9]+\.[0-9]+)", file.name)
+        if match:
+            return float(match.group(1))
+        return float("inf")
+
+    best_ckpt = min(checkpoint_files, key=parse_validation_loss)
+
+    return best_ckpt

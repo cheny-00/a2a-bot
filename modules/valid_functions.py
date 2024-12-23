@@ -40,6 +40,7 @@ def log_validation_metrics(self, losses, logit_t, batch, batch_idx):
     # Log validation loss
     val_losses = {f"val_{k}": v for k, v in losses.items()}
     log_loss(self, val_losses, len(batch["task"]), self.is_distributed)
+    self.log("validation_loss", losses["loss"], on_step=False, on_epoch=True, prog_bar=True, batch_size=len(batch["task"]), sync_dist=self.is_distributed)
 
     # text metrics
     text_batch_mask = [1 if _task[2:].startswith("T") else 0 for _task in batch["task"]]
@@ -78,14 +79,13 @@ def log_validation_metrics(self, losses, logit_t, batch, batch_idx):
                 sync_dist=getattr(self, "is_distributed", False)
             )
         
-        n_show_text_times = 5
+        n_show_text_times = self.hparams.n_show_text_times
         if not hasattr(self, '_show_text_count'):
             self._show_text_count = 0
         if self._show_text_count < n_show_text_times and hasattr(self, "val_text_wer"):
-            device = self.device
-            if str(self.device).startswith("mps"):
-                device = "cpu"
-                self.model.to(device)    
+            # device = self.device
+            device = "cpu"
+            self.model.to(device)    
             self.model.set_kv_cache(batch_size=1, device=device) 
             
             add_text_samples(
@@ -97,8 +97,7 @@ def log_validation_metrics(self, losses, logit_t, batch, batch_idx):
             self._show_text_count += 1
                 
             self.model.clear_kv_cache()
-            if str(self.device).startswith("mps"):
-                self.model.to(self.device)
+            self.model.to(self.device)
 
 
 def add_text_samples(self, batch, batch_idx, prefix="", sample_every_n=200):

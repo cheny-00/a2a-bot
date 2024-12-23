@@ -20,6 +20,7 @@ from utils.model_utils import load_models
 from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from pathlib import Path
 from utils.logging_utils import LightRichProgressBarTheme
+from utils.utils import fix_version_path
 
 def load_callbacks(model_name, version, task):
     callbacks = list()
@@ -33,7 +34,7 @@ def load_callbacks(model_name, version, task):
         plc.ModelCheckpoint(
             monitor=f"{task}/val_loss",
             # dirpath=f"checkpoints/{model_name}/version_{version}",
-            filename="best-{epoch}-{valid_loss_epoch:.2f}",
+            filename="best-{epoch}-{validation_loss:.3f}",
             save_top_k=1,
             mode="min",
             save_last=True,
@@ -84,8 +85,8 @@ def main(args):
     task = update_params(args, config)
     
     snac_model, whisper_model, tokenizer = load_models(config, args.ckpt_dir)
-    
     model = ModelInterface(
+        checkpoint_path=fix_version_path(args, args.resume_from_checkpoint),
         model_name=args.model_name,
         config=config,
         snac_model=snac_model,
@@ -101,11 +102,19 @@ def main(args):
         update_deepspeed_config(deepspeed_config, args.train_params)
         strategy = DeepSpeedStrategy(config=deepspeed_config)
     
-    model_state_dict = lazy_load(args.ckpt_dir + "/lit_model.pth")
-    model.model.load_state_dict(model_state_dict)
+    if args.resume_from_checkpoint:
+        print(f"========= Resume from checkpoint: {args.resume_from_checkpoint} =========")
+        print(f"========= Global step: {model.global_step} =========")
+    elif args.reuse_state_dict:
+        checkpoint_path = args.reuse_state_dict
+        checkpoint_path = fix_version_path(args, checkpoint_path)
+        checkpoint = torch.load(checkpoint_path)
+        model.load_state_dict(checkpoint["state_dict"])
+        print(f"========= Reuse state dict from: {checkpoint_path} =========")
+    else:
+        model_state_dict = lazy_load(args.ckpt_dir + "/lit_model.pth")
+        model.model.load_state_dict(model_state_dict)
     
-    
-
     
     data_module = DataInterface(
         config=config,
