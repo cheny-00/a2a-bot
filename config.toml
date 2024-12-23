@@ -28,7 +28,7 @@ valid_data_dir = "random"
 [stage_2]
 lr = 4e-4
 min_lr = 4e-6
-max_steps = 27000
+max_steps = 54000 # 27000 * 2
 warmup_steps = 0.1
 scheduler_interval = "step"
 datasets = ["asr_dataset", "text_qa_dataset"]

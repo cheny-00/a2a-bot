@@ -108,8 +108,8 @@ def main(args):
     elif args.reuse_state_dict:
         checkpoint_path = args.reuse_state_dict
         checkpoint_path = fix_version_path(args, checkpoint_path)
-        checkpoint = torch.load(checkpoint_path)
-        model.load_state_dict(checkpoint["state_dict"])
+        model_state_dict = torch.load(checkpoint_path)["state_dict"].to("cpu")
+        model.load_state_dict(model_state_dict)
         print(f"========= Reuse state dict from: {checkpoint_path} =========")
     else:
         model_state_dict = lazy_load(args.ckpt_dir + "/lit_model.pth")
