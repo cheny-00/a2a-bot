@@ -108,7 +108,7 @@ def main(args):
     elif args.reuse_state_dict:
         checkpoint_path = args.reuse_state_dict
         checkpoint_path = fix_version_path(args, checkpoint_path)
-        model_state_dict = torch.load(checkpoint_path)["state_dict"].to("cpu")
+        model_state_dict = torch.load(checkpoint_path, map_location="cpu")["state_dict"]
         model.load_state_dict(model_state_dict)
         print(f"========= Reuse state dict from: {checkpoint_path} =========")
     else:
