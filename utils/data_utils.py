@@ -206,10 +206,18 @@ def pad_snac_tokens(token_config: tp.Dict, snac_tokens: tp.List[tp.List[int]], m
     eoa = token_config["eoa"]
     padding_mask = list()
     for i, tokens in enumerate(snac_tokens):
+        available_space = max_seq_length - (i + 1) - 1 
+        
+        if len(tokens) > available_space:
+            tokens = tokens[:available_space]
+            
         padded_token = [pad_a] * (i + 1) + tokens + [eoa]
         _mask = [0] * (i + 1) + [1] * len(tokens) + [1]
-        padded_token = padded_token + [pad_a] * (max_seq_length - len(padded_token))
-        _mask = _mask + [0] * (max_seq_length - len(_mask))
+        
+        if len(padded_token) < max_seq_length:
+            padded_token = padded_token + [pad_a] * (max_seq_length - len(padded_token))
+            _mask = _mask + [0] * (max_seq_length - len(_mask))
+            
         padded_snac_tokens.append(padded_token)
         padding_mask.append(_mask)
         assert len(padded_token) == max_seq_length == len(_mask), "padded_token and padding_mask should have the same length"

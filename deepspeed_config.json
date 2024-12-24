@@ -16,7 +16,7 @@
         }
     },
     "zero_optimization": {
-        "stage": 3,
+        "stage": 2,
         "offload_param": {
             "device": "cpu",
             "pin_memory": true
