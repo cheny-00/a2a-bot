@@ -137,7 +137,7 @@ def add_text_samples(self, batch, batch_idx, prefix="", sample_every_n=200):
                            top_k=1,
                            tqdm_disable=True)
     pred_texts = self.tokenizer.decode(torch.tensor(pred_tokens)).strip()
-    target_text = self.tokenizer.decode(torch.tensor(batch["target_text_token"][0])).strip()
+    target_text = self.tokenizer.decode(batch["target_text_token"][0].clone().detach()).strip()
     
     self.val_text_wer.update([pred_texts], [target_text])
     current_wer = self.val_text_wer.compute()

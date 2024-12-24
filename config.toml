@@ -1,6 +1,6 @@
 
 model_layers = 8
-max_seq_length = 2048
+max_seq_length = 1024
 snac_model_name = "hubertsiuzdak/snac_24khz"
 whisper_model_name = "small"
 
@@ -17,7 +17,7 @@ audio_special_tokens = 64
 [stage_1]
 lr = 1e-3
 min_lr = 4e-6
-max_steps = 17000
+max_steps = 34000 # 17000 * 2
 warmup_steps = 0.1
 scheduler_interval = "step"
 datasets = "asr_dataset"
@@ -40,7 +40,7 @@ valid_data_dir = "random"
 alpha = 0.5
 lr = 4e-4
 min_lr = 4e-6
-max_steps = 50000
+max_steps = 100000 # 50000 * 2
 warmup_steps = 0.1
 scheduler_interval = "step"
 datasets = ["asr_dataset", "text_qa_dataset", "voice_qa_dataset"]
