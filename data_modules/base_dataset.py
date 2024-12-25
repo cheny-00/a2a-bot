@@ -79,7 +79,7 @@ class MiniOmniBaseDataset(Dataset):
         else:
             raise ValueError(f"Invalid task: {task}")
         
-        features["audio_feature"] = audio_feature
+        features["audio_feature"] = audio_feature.to("cpu")
         features["audio_length"] = audio_length
         
         target_text_token, target_text_token_mask = get_target_text_token(data[self.target_text_name], self.tokenizer, self.config["token_config"], self.max_seq_length)
@@ -91,8 +91,8 @@ class MiniOmniBaseDataset(Dataset):
         
         # target text token, target text token mask
         if task[2:].startswith("T"):
-            features["target_text_token"] = target_text_token
-            features["target_text_token_mask"] = target_text_token_mask
+            features["target_text_token"] = target_text_token.to("cpu")
+            features["target_text_token_mask"] = target_text_token_mask.to("cpu")
             features["target_text"] = data[self.target_text_name]
             
             features["target_snac_token"] = torch.ones_like(answer_snac_tokens) * self.token_config["pad_a"]

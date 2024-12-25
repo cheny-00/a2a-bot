@@ -95,12 +95,16 @@ def main(args):
     )
     
     strategy = None
-    if args.deepspeed and os.path.exists(args.deepspeed_config_path):
-        print(f"========= Use deepspeed config: {args.deepspeed_config_path} =========")
-        with open(args.deepspeed_config_path, "r") as f:
-            deepspeed_config = json.load(f) 
-        update_deepspeed_config(deepspeed_config, args.train_params)
-        strategy = DeepSpeedStrategy(config=deepspeed_config)
+    # if args.deepspeed and os.path.exists(args.deepspeed_config_path):
+    #     print(f"========= Use deepspeed config: {args.deepspeed_config_path} =========")
+    #     with open(args.deepspeed_config_path, "r") as f:
+    #         deepspeed_config = json.load(f) 
+    #     update_deepspeed_config(deepspeed_config, args.train_params)
+    #     strategy = DeepSpeedStrategy(config=deepspeed_config)
+    if args.deepspeed:
+        strategy = "deepspeed_stage_2"
+        print("========= Use deepspeed strategy: deepspeed_stage_2 =========")
+    
     
     if args.resume_from_checkpoint:
         print(f"========= Resume from checkpoint: {args.resume_from_checkpoint} =========")
@@ -120,7 +124,6 @@ def main(args):
         config=config,
         whisper_model=whisper_model,
         tokenizer=tokenizer,
-        strategy=strategy,
         **args.data_params,
     )
     
@@ -128,7 +131,8 @@ def main(args):
     args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version, task)
     args.pl_trainer_params["logger"] = logger
     
-    trainer = Trainer(**args.pl_trainer_params)
+    
+    trainer = Trainer(**args.pl_trainer_params, strategy=strategy)
     trainer.fit(model, data_module)
 
     
