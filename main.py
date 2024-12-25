@@ -85,8 +85,8 @@ def main(args):
     task = update_params(args, config)
     
     snac_model, whisper_model, tokenizer = load_models(config, args.ckpt_dir)
+    # TODO: fix resume from checkpoint(args.resume_from_checkpoint)
     model = ModelInterface(
-        checkpoint_path=fix_version_path(args, args.resume_from_checkpoint),
         model_name=args.model_name,
         config=config,
         snac_model=snac_model,
@@ -102,8 +102,10 @@ def main(args):
     #     update_deepspeed_config(deepspeed_config, args.train_params)
     #     strategy = DeepSpeedStrategy(config=deepspeed_config)
     if args.deepspeed:
-        strategy = "deepspeed_stage_2"
         print("========= Use deepspeed strategy: deepspeed_stage_2 =========")
+        args.pl_trainer_params.pop("gradient_clip_val", None)
+        args.pl_trainer_params.pop("gradient_clip_algorithm", None)
+        strategy = "deepspeed_stage_2"
     
     
     if args.resume_from_checkpoint:
@@ -130,7 +132,6 @@ def main(args):
     logger = TensorBoardLogger(save_dir=args.log_dir, name=args.model_name)
     args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version, task)
     args.pl_trainer_params["logger"] = logger
-    
     
     trainer = Trainer(**args.pl_trainer_params, strategy=strategy)
     trainer.fit(model, data_module)
