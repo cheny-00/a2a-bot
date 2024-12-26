@@ -94,7 +94,7 @@ def main(args):
         **args.train_params
     )
     
-    strategy = None
+    strategy = "auto"
     # if args.deepspeed and os.path.exists(args.deepspeed_config_path):
     #     print(f"========= Use deepspeed config: {args.deepspeed_config_path} =========")
     #     with open(args.deepspeed_config_path, "r") as f:

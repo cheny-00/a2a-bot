@@ -43,29 +43,18 @@ def log_validation_metrics(self, losses, logit_t, batch, batch_idx):
     self.log("validation_loss", losses["loss"], on_step=False, on_epoch=True, prog_bar=True, batch_size=len(batch["task"]), sync_dist=self.is_distributed)
 
     # text metrics
-    text_batch_mask = [1 if _task[2:].startswith("T") else 0 for _task in batch["task"]]
+    text_batch_mask = [1 if _task[2] == "T" else 0 for _task in batch["task"]]
+    
     if self.metrics is not None and sum(text_batch_mask) > 0:
         text_batch_mask = torch.tensor(text_batch_mask, device=logit_t.device)
         logit_t = logit_t * text_batch_mask.view(-1, 1, 1)
-        pred_ids = sample(logit_t)
         assert "target_text_token" in batch, "target_text_token is not in batch"
         tokens_to_check = batch["target_text_token"] * text_batch_mask.view(-1, 1)
         
-        # Log accuracy if metric exists
         if "val_text_acc" in self.metrics:
-            text_acc = self.val_text_acc.update(pred_ids, tokens_to_check)
-            current_acc = self.val_text_acc.compute()
-            self.log(
-                f"{self.task}/val_text_acc",
-                current_acc,
-                on_step=False,
-                on_epoch=True,
-                prog_bar=True,
-                batch_size=len(batch["task"]) if "task" in batch else None,
-                sync_dist=getattr(self, "is_distributed", False)
-            )
+            pred_ids = torch.argmax(logit_t, dim=-1)
+            self.val_text_acc.update(pred_ids, tokens_to_check)
 
-        # Log Perplexity if metric exists
         if "val_text_perplexity" in self.metrics:
             self.val_text_perplexity.update(logit_t, tokens_to_check)
             current_perplexity = self.val_text_perplexity.compute()
@@ -117,7 +106,6 @@ def add_text_samples(self, batch, batch_idx, prefix="", sample_every_n=200):
     device = batch["audio_feature"].device
     text_batch_mask = torch.tensor(text_batch_mask, device=device)
     text_batch_id = torch.argmax((text_batch_mask == 1).float(), dim=-1)
-    text_batch_id = 1
     single_sample = {
         "audio_feature": batch["audio_feature"][text_batch_id].unsqueeze(0),
         "input_ids": [_b[text_batch_id].unsqueeze(0) for _b in batch["input_ids"]],
