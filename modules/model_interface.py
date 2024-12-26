@@ -24,7 +24,7 @@ from functools import partial
 
 import pytorch_lightning as pl
 
-from torchmetrics import WordErrorRate
+from torchmetrics.text import WordErrorRate
 
 from utils.logging_utils import show_optimizer_details
 
