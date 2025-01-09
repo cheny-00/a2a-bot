@@ -27,7 +27,7 @@ import pytorch_lightning as pl
 from torchmetrics.text import WordErrorRate
 
 from utils.logging_utils import show_optimizer_details
-
+from modules.predict_functions import om_predict_step
 
 class ModelInterface(pl.LightningModule):
     def __init__(
@@ -241,10 +241,10 @@ class ModelInterface(pl.LightningModule):
 
         return model
 
-    def on_fit_start(self):
-        # Update distributed status when trainer is attached
-        trainer_distributed = getattr(self.trainer._accelerator_connector, "is_distributed", False)
-        self.is_distributed = self.is_distributed or trainer_distributed
+    
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        return om_predict_step(self, batch, batch_idx, dataloader_idx)
+    
 
 
 

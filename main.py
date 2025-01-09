@@ -21,6 +21,7 @@ from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from pathlib import Path
 from utils.logging_utils import LightRichProgressBarTheme
 from utils.utils import fix_version_path
+from infer import infer_once
 
 def load_callbacks(model_name, version, task):
     callbacks = list()
@@ -81,6 +82,8 @@ def main(args):
     print("model_config", model_config)
     config[args.model_name] = model_config
     config["model_name"] = args.model_name
+    if args.infer_params["infer_once"] or args.infer_params["infer"]:
+        config["infer_params"] = args.infer_params
     get_task_config(args.train_params, config)
     task = update_params(args, config)
     
@@ -134,7 +137,14 @@ def main(args):
     args.pl_trainer_params["logger"] = logger
     
     trainer = Trainer(**args.pl_trainer_params, strategy=strategy)
-    trainer.fit(model, data_module)
+    assert int(args.infer_params["infer"]) + int(args.infer_params["infer_once"]) < 2, "Only one of infer or single_infer can be True"
+
+    if args.infer_params["infer"]:
+        trainer.predict(model, data_module)
+    elif args.infer_params["infer_once"]:
+        infer_once(trainer, model, whisper_model, tokenizer, config)
+    else:
+        trainer.fit(model, data_module)
 
     
 

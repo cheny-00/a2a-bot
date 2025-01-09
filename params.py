@@ -120,13 +120,25 @@ def get_args():
     train_config.add_argument("--min_lr", type=float, default=1e-6, dest="train_config_min_lr")
     train_config.add_argument("--scheduler_interval", type=str, default="step", dest="train_config_scheduler_interval")
     train_config.add_argument("--n_show_text_times", type=int, default=2, dest="train_config_n_show_text_times")
-    
 
+    # for infer
+    infer_config = parser.add_argument_group("infer config", "infer config")
+    infer_config.add_argument("--infer", action="store_true", default=False, dest="infer_config_infer")
+    infer_config.add_argument("--infer_once", action="store_true", default=False, dest="infer_config_infer_once")
+    infer_config.add_argument("--use_state_dict", action="store_true", default=False, dest="infer_config_use_state_dict")
+    infer_config.add_argument("--max_seq_length", type=int, default=1200, dest="infer_config_max_seq_length")
+    infer_config.add_argument("--temperature", type=float, default=1, dest="infer_config_temperature")
+    infer_config.add_argument("--top_k", type=int, default=1, dest="infer_config_top_k")
+    infer_config.add_argument("--top_p", type=float, default=1.0, dest="infer_config_top_p")
+    infer_config.add_argument("--infer_device", type=str, default="cpu", dest="infer_config_infer_device")
+    infer_config.add_argument("--out_dir", type=str, default=None, dest="infer_config_out_dir")
     args = parser.parse_args()
 
     args.data_params = get_group_parameters(args, "data_config_")
     
     args.train_params = get_group_parameters(args, "train_config_")
+    args.infer_params = get_group_parameters(args, "infer_config_")
+    
     if "loss_fn_name" not in args.train_params:
         args.train_params["loss_fn_name"] = None
     

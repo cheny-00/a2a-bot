@@ -3,7 +3,7 @@ from typing import Union
 from rich.style import Style
 from rich.console import Console
 from rich.table import Table
-
+from rich.panel import Panel
 @dataclass
 class LightRichProgressBarTheme:
     """Styles to associate to different base components.
@@ -54,3 +54,39 @@ def show_optimizer_details(optimizer_name, optimizer_params):
 
     # Print the table to the console
     console.print(table)
+    
+    
+def display_prediction(task, batch_idx, input_text, prediction, audio_path=None):
+    console = Console(width=100)  # Set a reasonable console width
+    
+    # Create a table for the results
+    table = Table(show_header=False, box=None, width=98, padding=(0, 2))  # Add horizontal padding
+    table.add_column("Label", style="cyan", width=12, no_wrap=True)  # Fixed width for labels
+    table.add_column("Value", style="green", ratio=1, overflow="fold")  # Use remaining space, wrap text
+    
+    # Add rows with potential long text
+    table.add_row("Task", task)
+    table.add_row("Batch Index", str(batch_idx))
+    # Add empty row for spacing
+    table.add_row("", "")
+    table.add_row("Input", str(input_text))
+    # Add empty row for spacing
+    table.add_row("", "")
+    table.add_row("Prediction", str(prediction))
+    if audio_path:
+        # Add empty row for spacing
+        table.add_row("", "")
+        table.add_row("Audio Output", audio_path)
+    
+    # Create a panel containing the table
+    panel = Panel(
+        table,
+        title="[bold blue]Prediction Results[/bold blue]",
+        border_style="blue",
+        padding=(1, 2),
+        width=100
+    )
+    
+    console.print("\n")  # Add some spacing
+    console.print(panel)
+    console.print("\n")  # Add some spacing

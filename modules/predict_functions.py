@@ -1,0 +1,80 @@
+# -- coding: utf-8 --
+# @Time    :   2024/12/26
+# @Author  :   chy
+
+
+import torch
+import pytorch_lightning as pl
+import soundfile as sf
+from mini_omni.litgpt.generate import base
+from functools import partial
+from mini_omni.snac_utils.snac_utils import reconscruct_snac, reconstruct_tensors
+from utils.logging_utils import display_prediction
+
+def om_predict_step(self: pl.LightningModule, batch, batch_idx, dataloader_idx=0):
+    # device 可能存在问题
+    # batch size => 1
+    device = self.config["infer_params"]["infer_device"]
+    task = batch["task"][0]
+    self.model.to(device)
+    self.model.set_kv_cache(batch_size=1, device=device) 
+    result_tokens = predict_func(self.model, batch, self.config, task)
+    self.model.clear_kv_cache()
+    self.model.to(self.device)
+    result_text = convert_results(result_tokens, task, self.config, self.snac_model, self.tokenizer)
+    display_prediction(task, batch_idx, batch['question'], result_text)
+    return result_text
+
+def predict_func(model, batch, config, task):
+    if task == "A1T1":
+        generate_func = base.generate_ASR
+    elif task == "A1T2":
+        generate_func = base.generate_AT
+    elif task == "T1T2":
+        generate_func = base.generate_TT
+    elif task == "A1A2":
+        generate_func = base.generate_AA
+        
+    result_tokens = generate_func(
+        model,
+        batch["audio_feature"], batch["input_ids"], batch["audio_length"], task,
+        max_returned_tokens=config["max_seq_length"],
+        temperature=config["infer_params"]["temperature"],
+        top_k=config["infer_params"]["top_k"],
+        top_p=config["infer_params"]["top_p"],
+        eos_id_a=config["token_config"]["eot"],
+        eos_id_t=config["token_config"]["eot"],
+        pad_id_t=config["token_config"]["pad_t"],
+        shift=config["token_config"]["padded_text_vocab_size"],
+        include_prompt=True,
+        generate_text=True,
+    )
+    
+    return result_tokens
+
+def convert_results(result_tokens, task, config, snac_model, tokenizer, step=0):
+    
+    if task[2] == "A":
+        audio_list = reconscruct_snac(result_tokens)
+        audio = reconstruct_tensors(audio_list)
+        if config["infer_params"]["out_dir"] is None:
+            out_dir = f"./output/default/{task}"
+        else:
+            out_dir = config["infer_params"]["out_dir"]
+        with torch.inference_mode():
+            audio_hat = snac_model.decode(audio)
+        sf.write(
+            f"{out_dir}/{step:02d}.wav",
+            audio_hat.squeeze().cpu().numpy(),
+            24000,
+        )  
+            
+        token_list = result_tokens[-1]
+        text = tokenizer.decode(torch.tensor(token_list)).strip()
+    elif task[2] == "T":
+        text = tokenizer.decode(torch.tensor(result_tokens)).strip()
+    else:
+        raise ValueError(f"task {task} is not supported")
+    
+    return text
+        
