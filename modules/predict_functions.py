@@ -10,6 +10,7 @@ from mini_omni.litgpt.generate import base
 from functools import partial
 from mini_omni.snac_utils.snac_utils import reconscruct_snac, reconstruct_tensors
 from utils.logging_utils import display_prediction
+from mini_omni.snac_utils.snac_utils import layershift
 
 def om_predict_step(self: pl.LightningModule, batch, batch_idx, dataloader_idx=0):
     # device 可能存在问题
@@ -34,10 +35,13 @@ def predict_func(model, batch, config, task):
         generate_func = base.generate_TT
     elif task == "A1A2":
         generate_func = base.generate_AA
-        
+    elif task == "T1A2":
+        generate_func = base.generate_TA
+    seq_length = batch["text_length"] if task[0] == "T" else batch["audio_length"]
+    new_input_ids = convert_input_ids_for_prediction(batch["input_ids"], seq_length)
     result_tokens = generate_func(
         model,
-        batch["audio_feature"], batch["input_ids"], batch["audio_length"], task,
+        batch["audio_feature"], new_input_ids, batch["audio_length"], task,
         max_returned_tokens=config["max_seq_length"],
         temperature=config["infer_params"]["temperature"],
         top_k=config["infer_params"]["top_k"],
@@ -77,4 +81,13 @@ def convert_results(result_tokens, task, config, snac_model, tokenizer, step=0):
         raise ValueError(f"task {task} is not supported")
     
     return text
-        
+
+
+def convert_input_ids_for_prediction(input_ids, seq_length):
+    
+    new_input_ids = []
+    for _layer in input_ids:
+        _layer = _layer.squeeze(0).tolist()
+        _new_layer = [_layer[0]] + _layer[1:seq_length+1] + _layer[-2:]
+        new_input_ids.append(torch.tensor(_new_layer).unsqueeze(0))
+    return new_input_ids

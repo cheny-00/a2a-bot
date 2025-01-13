@@ -96,13 +96,20 @@ def get_input_template(token_config, seq_length, model_layers=8, speical_token_n
     return input_ids
 
 
-def get_audio_template(token_config, max_seq_length=None, model_layers=8):
+def get_audio_template(token_config, max_seq_length=None, model_layers=8, last_token_name="pad_a"):
     input_ids = []
     # First model_layers-1 layers use audio padding tokens with layershift
+    last_token_name = "pad_a"
     for i in range(model_layers - 1):
         audio_pad_token = layershift(token_config["pad_a"], i)
-        pad_tokens = [audio_pad_token] * max_seq_length
-        input_ids.append(torch.tensor(pad_tokens))
+        pad_tokens = [audio_pad_token] * (max_seq_length - 1)
+        if last_token_name == "pad_a":
+            _last_token = layershift(token_config["pad_a"], i)
+        elif last_token_name == "eoa":
+            _last_token = token_config[last_token_name]
+        else:
+            raise ValueError(f"last_token should be 'pad_a' or 'eoa', but get {last_token_name}")
+        input_ids.append(torch.tensor(pad_tokens + [_last_token]))
     return input_ids
 
 def pad_text_tokens(token_config, tokens, max_seq_length):

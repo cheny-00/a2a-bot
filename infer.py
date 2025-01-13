@@ -8,7 +8,7 @@ from data_modules import dataset_selector
 from torch.utils.data import DataLoader
 
 def infer_once(trainer: pl.Trainer, model: pl.LightningModule, whisper_model, tokenizer, config):
-    user_text = "Test Test Test"
+    user_text = "What is your name?"
     user_audio = None 
     task = "T1T2"
     input_data = {

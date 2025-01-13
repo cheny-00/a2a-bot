@@ -11,6 +11,8 @@ from typing import Dict, AnyStr, Union
 
 from torch.utils.data import Dataset
 
+from utils.data_utils import get_audio_template
+
 from utils.data_utils import (
     load_audio_from_bytes,
     load_audio_from_path,
@@ -28,7 +30,7 @@ class MiniOmniBaseDataset(Dataset):
         whisper_model,
         tokenizer,
         config: Dict,
-        train=True,
+        train: bool = True,
     ):
         data_dir = Path(data_dir)
         assert data_dir.exists(), f"{data_dir} NOT EXISTS!"
@@ -37,6 +39,7 @@ class MiniOmniBaseDataset(Dataset):
         self.data = self._load_data(data_dir)
         self.whisper_model = whisper_model
         self.tokenizer = tokenizer
+        self.train = train
         self._map_config(config)
     
     def _map_config(self, config: Dict):
@@ -63,7 +66,8 @@ class MiniOmniBaseDataset(Dataset):
         whisper_model,
         tokenizer,
         config: Dict,
-        task: str
+        task: str,
+        train: bool = False
     ):
         """_summary_
 
@@ -77,6 +81,7 @@ class MiniOmniBaseDataset(Dataset):
             tokenizer: tokenizer
             config: config
             task (str): task
+            train (bool): train or not
         """
         instance = cls.__new__(cls)
         if not isinstance(input_data, pd.DataFrame):
@@ -87,6 +92,7 @@ class MiniOmniBaseDataset(Dataset):
         instance.tokenizer = tokenizer
         instance._map_config(config)
         instance._collate_common_features = instance._collate_source_features.__get__(instance, cls)
+        instance.train = False
         return instance
         
     
@@ -113,8 +119,13 @@ class MiniOmniBaseDataset(Dataset):
             audio_feature = audio_feature.squeeze(0)
         elif task.startswith("T"):
             features["question"] = data["question"]
-            audio_feature = torch.zeros((self.max_seq_length, self.config[self.model_name].whisper_adapter_dim))
-            audio_length = 0
+            if self.train:
+                audio_feature = torch.zeros((self.max_seq_length, self.config[self.model_name].whisper_adapter_dim))
+                audio_length = 0
+            else:
+                last_token_name = "eoa" if task[2] == "A" else "pad_a"
+                audio_feature = torch.stack(get_audio_template(self.token_config, self.max_seq_length, self.model_layers, last_token_name))
+                audio_length = 0
         else:
             raise ValueError(f"Invalid task: {task}")
         features["audio_feature"] = audio_feature.to("cpu")

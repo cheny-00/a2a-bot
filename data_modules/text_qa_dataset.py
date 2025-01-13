@@ -39,12 +39,13 @@ class TextQaDataset(MiniOmniBaseDataset):
         features = self._collate_common_features(data, task)
         
         question_tokens = self.tokenizer.encode(data["question"])
+        text_length = len(question_tokens)
         question_tokens = pad_text_tokens(self.token_config, question_tokens, self.max_seq_length)
         
-        audio_input_ids = get_audio_template(self.token_config, self.max_seq_length, self.model_layers)
+        audio_input_ids = [_a for _a in features["audio_feature"]]
         input_ids = audio_input_ids + [question_tokens]
         features["input_ids"] = input_ids
-        
+        features["text_length"] = text_length
         features["task"] = task
         
         return features
