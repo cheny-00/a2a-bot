@@ -112,7 +112,8 @@ def add_text_samples(self, batch, batch_idx, prefix="", sample_every_n=200):
         "audio_length": batch["audio_length"][text_batch_id].unsqueeze(0),
         "task": [batch["task"][text_batch_id]]
     }
-    pred_texts = self.predict_step(single_sample, batch_idx, dataloader_idx=0, display_result=False)
+    precision = self.config["train_params"]["precision"]
+    pred_texts = self.predict_step(single_sample, batch_idx, dataloader_idx=0, display_result=False, precision=precision)
     target_text = batch["target_text"][text_batch_id].strip()
     
     self.val_text_wer.update([pred_texts], [target_text])

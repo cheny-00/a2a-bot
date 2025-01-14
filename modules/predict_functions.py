@@ -12,10 +12,11 @@ from mini_omni.snac_utils.snac_utils import reconscruct_snac, reconstruct_tensor
 from utils.logging_utils import display_prediction
 from mini_omni.snac_utils.snac_utils import layershift
 
-def om_predict_step(self: pl.LightningModule, batch, batch_idx, dataloader_idx=0, display_result=True):
+def om_predict_step(self: pl.LightningModule, batch, batch_idx, dataloader_idx=0, display_result=True, precision=32):
     # device 可能存在问题
     # batch size => 1
     device = "cpu"
+    batch = convert_batch_from_fp32_to_precision(batch, precision)
     if "infer_params" in self.config:
         device = self.config["infer_params"]["infer_device"]
     task = batch["task"][0]
@@ -97,3 +98,21 @@ def convert_input_ids_for_prediction(input_ids, seq_length):
         _new_layer = [_layer[0]] + _layer[1:seq_length+1] + _layer[-2:]
         new_input_ids.append(torch.tensor(_new_layer).unsqueeze(0))
     return new_input_ids
+
+
+def convert_batch_from_fp32_to_precision(batch, precision: int):
+    if precision == 32:
+        return batch
+    if precision == 16:
+        torch_precision = torch.float16
+    elif precision == 8:
+        torch_precision = torch.float8
+    else:
+        raise ValueError(f"precision {precision} is not supported")
+    
+    for key in batch:
+        if isinstance(batch[key], torch.Tensor):
+            batch[key] = batch[key].to(torch_precision)
+        elif isinstance(batch[key], list):
+            batch[key] = [item.to(torch_precision) for item in batch[key]]
+    return batch
