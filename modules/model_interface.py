@@ -242,9 +242,10 @@ class ModelInterface(pl.LightningModule):
         return model
 
     
-    def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        return om_predict_step(self, batch, batch_idx, dataloader_idx)
+    def predict_step(self, batch, batch_idx, dataloader_idx=0, display_result=True):
+        return om_predict_step(self, batch, batch_idx, dataloader_idx, display_result)
     
+
 
 
 

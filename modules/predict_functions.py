@@ -12,10 +12,12 @@ from mini_omni.snac_utils.snac_utils import reconscruct_snac, reconstruct_tensor
 from utils.logging_utils import display_prediction
 from mini_omni.snac_utils.snac_utils import layershift
 
-def om_predict_step(self: pl.LightningModule, batch, batch_idx, dataloader_idx=0):
+def om_predict_step(self: pl.LightningModule, batch, batch_idx, dataloader_idx=0, display_result=True):
     # device 可能存在问题
     # batch size => 1
-    device = self.config["infer_params"]["infer_device"]
+    device = "cpu"
+    if "infer_params" in self.config:
+        device = self.config["infer_params"]["infer_device"]
     task = batch["task"][0]
     self.model.to(device)
     self.model.set_kv_cache(batch_size=1, device=device) 
@@ -23,7 +25,8 @@ def om_predict_step(self: pl.LightningModule, batch, batch_idx, dataloader_idx=0
     self.model.clear_kv_cache()
     self.model.to(self.device)
     result_text = convert_results(result_tokens, task, self.config, self.snac_model, self.tokenizer)
-    display_prediction(task, batch_idx, batch['question'], result_text)
+    if display_result:
+        display_prediction(task, batch_idx, batch['question'], result_text)
     return result_text
 
 def predict_func(model, batch, config, task):
@@ -37,6 +40,8 @@ def predict_func(model, batch, config, task):
         generate_func = base.generate_AA
     elif task == "T1A2":
         generate_func = base.generate_TA
+    else:
+        raise ValueError(f"task {task} is not supported")
     seq_length = batch["text_length"] if task[0] == "T" else batch["audio_length"]
     new_input_ids = convert_input_ids_for_prediction(batch["input_ids"], seq_length)
     result_tokens = generate_func(
@@ -52,6 +57,7 @@ def predict_func(model, batch, config, task):
         shift=config["token_config"]["padded_text_vocab_size"],
         include_prompt=True,
         generate_text=True,
+        tqdm_disable=True,
     )
     
     return result_tokens

@@ -447,6 +447,7 @@ def generate_TT(
     shift: Optional[int] = None,
     include_prompt: bool = True,
     generate_text=False,
+    tqdm_disable=False,
 ) -> torch.Tensor:
 
     T = input_ids[0].size(1)
@@ -468,7 +469,7 @@ def generate_TT(
     output.append(token_T.clone().tolist()[0])
     input_pos = torch.tensor([T], device=device)
 
-    for _ in tqdm(range(2, max_returned_tokens - T + 1)):
+    for _ in tqdm(range(2, max_returned_tokens - T + 1), disable=tqdm_disable):
         model_input_ids = []
         for i in range(7):
             model_input_ids.append(
@@ -581,6 +582,7 @@ def generate_TA(
     shift: Optional[int] = None,
     include_prompt: bool = True,
     generate_text=False,
+    tqdm_disable=False,
 ) -> torch.Tensor:
 
     T = input_ids[0].size(1)
@@ -663,6 +665,7 @@ def generate_AA(
     shift: Optional[int] = None,
     include_prompt: bool = True,
     generate_text=False,
+    tqdm_disable=False,
 ) -> torch.Tensor:
 
     T = input_ids[0].size(1)
@@ -687,7 +690,7 @@ def generate_AA(
     input_pos = torch.tensor([T], device=device)
 
     text_end = False
-    for _ in tqdm(range(2, max_returned_tokens - T + 1)):
+    for _ in tqdm(range(2, max_returned_tokens - T + 1), disable=tqdm_disable):
 
         model_input_ids = []
         for i in range(7):
@@ -746,6 +749,7 @@ def generate_ASR(
     shift: Optional[int] = None,
     include_prompt: bool = True,
     generate_text=False,
+    tqdm_disable=False,
 ) -> torch.Tensor:
 
     T = input_ids[0].size(1)
@@ -765,7 +769,7 @@ def generate_ASR(
     output.append(token_T.clone().tolist()[0])
     input_pos = torch.tensor([T], device=device)
     text_end = False
-    for _ in tqdm(range(2, max_returned_tokens - T + 1)):
+    for _ in tqdm(range(2, max_returned_tokens - T + 1), disable=tqdm_disable):
         model_input_ids = []
         for i in range(7):
             model_input_ids.append(

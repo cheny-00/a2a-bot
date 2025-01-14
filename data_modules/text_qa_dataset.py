@@ -11,7 +11,7 @@ import pandas as pd
 from torch.utils.data import Dataset
 from utils.data_utils import (
     pad_text_tokens,
-    get_input_template,
+    get_audio_template,
 )
 from data_modules.base_dataset import MiniOmniBaseDataset
 
@@ -38,7 +38,7 @@ class TextQaDataset(MiniOmniBaseDataset):
         text_length = len(question_tokens)
         question_tokens = pad_text_tokens(self.token_config, question_tokens, self.max_seq_length)
         
-        audio_input_ids = get_input_template(self.token_config, self.max_seq_length - 3, self.model_layers, speical_token_name="pad_a")
+        audio_input_ids = get_audio_template(self.token_config, self.max_seq_length, self.model_layers, "pad_a")
         input_ids = audio_input_ids + [question_tokens]
         features["input_ids"] = input_ids
         features["text_length"] = text_length

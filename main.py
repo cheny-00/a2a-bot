@@ -86,8 +86,7 @@ def main(args):
     print("model_config", model_config)
     config[args.model_name] = model_config
     config["model_name"] = args.model_name
-    if args.infer_params["infer_once"] or args.infer_params["infer"]:
-        config["infer_params"] = args.infer_params
+    config["infer_params"] = args.infer_params
     get_task_config(args.train_params, config)
     task = update_params(args, config)
     
@@ -140,7 +139,7 @@ def main(args):
     )
     
     logger = TensorBoardLogger(save_dir=args.log_dir, name=args.model_name)
-    if not args.infer_params["infer_once"] or not args.infer_params["infer"] or not args.debug:
+    if not (args.infer_params["infer_once"] or args.infer_params["infer"]) and not args.debug:
         args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version, task)
         args.pl_trainer_params["logger"] = logger
     
@@ -148,10 +147,13 @@ def main(args):
     assert int(args.infer_params["infer"]) + int(args.infer_params["infer_once"]) < 2, "Only one of infer or single_infer can be True"
 
     if args.infer_params["infer"]:
+        print("========= Infer =========")
         trainer.predict(model, data_module)
     elif args.infer_params["infer_once"]:
+        print("========= Infer once =========")
         infer_once(trainer, model, whisper_model, tokenizer, config)
     else:
+        print("========= Train =========")
         trainer.fit(model, data_module)
 
     

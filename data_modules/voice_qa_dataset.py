@@ -41,7 +41,8 @@ class VoiceQaDataset(MiniOmniBaseDataset):
         features["input_ids"] = input_ids
 
         features["task"] = task
-
+        features["text_length"] = 0
+        
         return features
         
         

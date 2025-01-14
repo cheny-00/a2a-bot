@@ -110,22 +110,10 @@ def add_text_samples(self, batch, batch_idx, prefix="", sample_every_n=200):
         "audio_feature": batch["audio_feature"][text_batch_id].unsqueeze(0),
         "input_ids": [_b[text_batch_id].unsqueeze(0) for _b in batch["input_ids"]],
         "audio_length": batch["audio_length"][text_batch_id].unsqueeze(0),
-        "task": batch["task"][text_batch_id]
+        "task": [batch["task"][text_batch_id]]
     }
-    pred_tokens = generate_AT(self.model, single_sample["audio_feature"], 
-                           single_sample["input_ids"], single_sample["audio_length"], 
-                           single_sample["task"], max_returned_tokens=2048,
-                           generate_text=True,
-                           include_prompt=False,
-                           temperature=0.9,
-                           eos_id_t=self.token_config["eot"],
-                           eos_id_a=self.token_config["eoa"],
-                           pad_id_t=self.token_config["pad_t"],
-                           shift=self.token_config["padded_text_vocab_size"],
-                           top_k=1,
-                           tqdm_disable=True)
-    pred_texts = self.tokenizer.decode(torch.tensor(pred_tokens)).strip()
-    target_text = self.tokenizer.decode(batch["target_text_token"][0].clone().detach()).strip()
+    pred_texts = self.predict_step(single_sample, batch_idx, dataloader_idx=0, display_result=False)
+    target_text = batch["target_text"][text_batch_id].strip()
     
     self.val_text_wer.update([pred_texts], [target_text])
     current_wer = self.val_text_wer.compute()

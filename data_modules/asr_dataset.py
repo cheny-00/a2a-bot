@@ -27,6 +27,7 @@ class AsrDataset(MiniOmniBaseDataset):
         input_ids = get_input_template(self.config["token_config"], self.max_seq_length - 3, self.model_layers, speical_token_name="pad_a")
 
         features['input_ids'] = input_ids
+        features['text_length'] = 0
         features['task'] = task
 
         return features
