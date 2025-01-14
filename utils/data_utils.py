@@ -101,7 +101,6 @@ def get_input_template(token_config, seq_length, model_layers=8, speical_token_n
 def get_audio_template(token_config, max_seq_length=None, model_layers=8, last_token_name="pad_a"):
     input_ids = []
     # First model_layers-1 layers use audio padding tokens with layershift
-    last_token_name = "pad_a"
     for i in range(model_layers - 1):
         audio_pad_token = layershift(token_config["pad_a"], i)
         pad_tokens = [audio_pad_token] * (max_seq_length - 1)

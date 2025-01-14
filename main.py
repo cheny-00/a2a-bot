@@ -140,8 +140,9 @@ def main(args):
     )
     
     logger = TensorBoardLogger(save_dir=args.log_dir, name=args.model_name)
-    args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version, task)
-    args.pl_trainer_params["logger"] = logger
+    if not args.infer_params["infer_once"] or not args.infer_params["infer"] or not args.debug:
+        args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version, task)
+        args.pl_trainer_params["logger"] = logger
     
     trainer = Trainer(**args.pl_trainer_params, strategy=strategy)
     assert int(args.infer_params["infer"]) + int(args.infer_params["infer_once"]) < 2, "Only one of infer or single_infer can be True"
