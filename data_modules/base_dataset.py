@@ -118,7 +118,6 @@ class MiniOmniBaseDataset(Dataset):
             audio_feature = pad_to_max_length(audio_feature, self.max_seq_length, self.token_config["pad_a"])
             audio_feature = audio_feature.squeeze(0)
         elif task.startswith("T"):
-            features["question"] = data["question"]
             if self.train:
                 audio_feature = torch.zeros((self.max_seq_length, self.config[self.model_name].whisper_adapter_dim))
                 audio_length = 0
@@ -128,6 +127,7 @@ class MiniOmniBaseDataset(Dataset):
                 audio_length = 0
         else:
             raise ValueError(f"Invalid task: {task}")
+        features["question"] = data["question"]
         features["audio_feature"] = audio_feature.to("cpu")
         features["audio_length"] = audio_length
         return features

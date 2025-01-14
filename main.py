@@ -11,7 +11,7 @@ import pytorch_lightning.callbacks as plc
 from pytorch_lightning.loggers import TensorBoardLogger
 from lightning.pytorch.strategies import DeepSpeedStrategy
 try:
-    from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
+    from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint # type: ignore
 except:
     print("Deepspeed is not installed, skipping zero checkpoint loading")
 
