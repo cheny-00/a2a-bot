@@ -10,6 +10,10 @@ from pytorch_lightning import Trainer
 import pytorch_lightning.callbacks as plc
 from pytorch_lightning.loggers import TensorBoardLogger
 from lightning.pytorch.strategies import DeepSpeedStrategy
+try:
+    from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint
+except:
+    print("Deepspeed is not installed, skipping zero checkpoint loading")
 
 
 from modules.model_interface import ModelInterface
@@ -117,7 +121,10 @@ def main(args):
     elif args.reuse_state_dict:
         checkpoint_path = args.reuse_state_dict
         checkpoint_path = fix_version_path(args, checkpoint_path)
-        model_state_dict = torch.load(checkpoint_path, map_location="cpu")["state_dict"]
+        if checkpoint_path.is_file():
+            model_state_dict = torch.load(checkpoint_path, map_location="cpu")["state_dict"]
+        else:
+            model_state_dict = get_fp32_state_dict_from_zero_checkpoint(checkpoint_path)
         model.load_state_dict(model_state_dict)
         print(f"========= Reuse state dict from: {checkpoint_path} =========")
     else:
