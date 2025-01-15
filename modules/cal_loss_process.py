@@ -18,7 +18,7 @@ def cal_text_loss(batch, logit_t, pad_t=-100):
     target_text_token = batch['target_text_token']
     target_text_token_mask = batch['target_text_token_mask']
     if target_text_token_mask.sum() == 0:
-        return 0
+        return torch.tensor(0.0, dtype=logit_t.dtype, device=logit_t.device, requires_grad=True)
     
     shifted_target_text_token = target_text_token[..., 1:].contiguous()
     shifted_logits = logit_t[..., :-1, :].contiguous() 
@@ -30,7 +30,7 @@ def cal_audio_loss(batch, logit_a, pad_t=-100):
     answer_snac_tokens = batch['target_snac_token']
     answer_snac_padding_mask = batch['target_snac_token_mask']
     if answer_snac_padding_mask.sum() == 0:
-        return 0
+        return torch.tensor(0.0, dtype=logit_a.dtype, device=logit_a.device, requires_grad=True)
         
     loss_audio, _ = audio_mask_cross_entropy(logit_a, answer_snac_tokens, answer_snac_padding_mask, ignore_index=pad_t)
     return loss_audio

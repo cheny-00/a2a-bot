@@ -77,7 +77,7 @@ def get_args():
     # pl_trainer config
     pl_trainer_config = parser.add_argument_group("pl_trainer config", "pl_trainer config")
     pl_trainer_config.add_argument("--max_epochs", type=int, default=200, dest="pl_trainer_max_epochs")
-    pl_trainer_config.add_argument("--precision", type=int, default=32, dest="pl_trainer_precision")
+    pl_trainer_config.add_argument("--precision", type=str, default=32, dest="pl_trainer_precision")
     ## accelerator
     pl_trainer_config.add_argument("--accelerator", type=str, default="auto", dest="pl_trainer_accelerator")
     # pl_trainer_config.add_argument("--strategy", type=str, default="ddp", dest="pl_trainer_strategy")

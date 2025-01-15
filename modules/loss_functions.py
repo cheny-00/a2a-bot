@@ -17,7 +17,7 @@ def audio_mask_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: 
     B, K, T = targets.shape
     assert logits.shape[:-1] == targets.shape
     assert mask.shape == targets.shape
-    ce = torch.zeros([], device=targets.device)
+    ce = torch.zeros([], device=targets.device, dtype=logits.dtype)
     ce_per_codebook: tp.List[torch.Tensor] = []
     for k in range(K):
         logits_k = logits[:, k, ...].contiguous().view(-1, logits.size(-1))  # [B x T, card]
@@ -70,7 +70,7 @@ def chunked_cross_entropy(
             logits = torch.cat(logits, dim=1)
             logits = logits.reshape(-1, logits.size(-1))
             targets = targets.reshape(-1)
-            return torch.nn.functional.cross_entropy(logits, targets, ignore_index=ignore_index)
+            return torch.nn.functional.cross_entropy(logits, targets, ignore_index=ignore_index, dtype=logits.dtype)
 
         # chunk cross entropy
         logit_chunks = [logit_chunk.reshape(-1, logit_chunk.size(-1)) for logit_chunk in logits]
@@ -81,7 +81,7 @@ def chunked_cross_entropy(
         ]
         non_masked_elems = (targets != ignore_index).sum()
         # See [non_masked_elems div note]
-        return torch.cat(loss_chunks).sum() / non_masked_elems.maximum(torch.ones_like(non_masked_elems))
+        return (torch.cat(loss_chunks).sum() / non_masked_elems.maximum(torch.ones_like(non_masked_elems))).to(logits.dtype)
 
     # no chunking at all
     logits = logits.reshape(-1, logits.size(-1))
@@ -101,4 +101,4 @@ def chunked_cross_entropy(
     #   max(1, non_masked_elems) would be more ergonomic to avoid a division by zero. However that
     #   results in a python int which is then passed back to torch division. By using the
     #   `x.maximum(torch.ones_like(x))` pattern we avoid a cudaStreamSynchronize.
-    return torch.cat(loss_chunks).sum() / non_masked_elems.maximum(torch.ones_like(non_masked_elems))
+    return torch.cat(loss_chunks).sum() / non_masked_elems.maximum(torch.ones_like(non_masked_elems)).to(logits.dtype)

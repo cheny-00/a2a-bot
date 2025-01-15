@@ -107,6 +107,10 @@ def convert_batch_from_fp32_to_precision(batch, precision: int):
         torch_precision = torch.float16
     elif precision == 8:
         torch_precision = torch.float8
+    elif precision == "bf16-mixed" or precision == "bf16":
+        torch_precision = torch.bfloat16
+    elif precision == "16-mixed" or precision == "16":
+        torch_precision = torch.float16
     else:
         raise ValueError(f"precision {precision} is not supported")
     

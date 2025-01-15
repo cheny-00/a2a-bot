@@ -87,6 +87,7 @@ def main(args):
     config[args.model_name] = model_config
     config["model_name"] = args.model_name
     config["infer_params"] = args.infer_params
+    config["precision"] = args.pl_trainer_params["precision"]
     get_task_config(args.train_params, config)
     task = update_params(args, config)
     
