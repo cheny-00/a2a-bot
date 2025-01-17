@@ -144,12 +144,16 @@ def main(args):
     )
     
     logger = TensorBoardLogger(save_dir=args.log_dir, name=args.model_name)
-    if not (args.infer_params["infer_once"] or args.infer_params["infer"]) and not args.debug:
-        args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version, task)
-        args.pl_trainer_params["logger"] = logger
+    args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version, task)
+    args.pl_trainer_params["logger"] = logger
+    
+    if args.infer_params["infer_once"] or args.infer_params["infer"]:
+        args.pl_trainer_params["logger"] = False
+        args.pl_trainer_params["enable_checkpointing"] = False
     
     
-    trainer = Trainer(**args.pl_trainer_params, strategy=strategy, fast_dev_run=args.fast_dev_run)
+    
+    trainer = Trainer(**args.pl_trainer_params, strategy=strategy)
     assert int(args.infer_params["infer"]) + int(args.infer_params["infer_once"]) < 2, "Only one of infer or single_infer can be True"
 
     if args.infer_params["infer"]:

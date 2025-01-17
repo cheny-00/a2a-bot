@@ -68,7 +68,6 @@ def get_args():
     parser.add_argument("--log_dir", type=str, default=".logs/")
     parser.add_argument("--reuse_state_dict", type=str, default=None)
     parser.add_argument("--resume_from_checkpoint", type=str, default=None)
-    parser.add_argument("--fast_dev_run", type=int, default=None)
     
     # deepspeed config
     parser.add_argument("--deepspeed_config_path", type=str, default="./deepspeed_config.json")
@@ -78,6 +77,8 @@ def get_args():
     pl_trainer_config = parser.add_argument_group("pl_trainer config", "pl_trainer config")
     pl_trainer_config.add_argument("--max_epochs", type=int, default=200, dest="pl_trainer_max_epochs")
     pl_trainer_config.add_argument("--precision", type=str, default=32, dest="pl_trainer_precision")
+    pl_trainer_config.add_argument("--fast_dev_run", type=int, default=False, dest="pl_trainer_fast_dev_run")
+    
     ## accelerator
     pl_trainer_config.add_argument("--accelerator", type=str, default="auto", dest="pl_trainer_accelerator")
     # pl_trainer_config.add_argument("--strategy", type=str, default="ddp", dest="pl_trainer_strategy")
