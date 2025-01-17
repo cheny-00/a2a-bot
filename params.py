@@ -68,7 +68,7 @@ def get_args():
     parser.add_argument("--log_dir", type=str, default=".logs/")
     parser.add_argument("--reuse_state_dict", type=str, default=None)
     parser.add_argument("--resume_from_checkpoint", type=str, default=None)
-    parser.add_argument("--debug", action="store_true", default=False)
+    parser.add_argument("--fast_dev_run", type=int, default=None)
     
     # deepspeed config
     parser.add_argument("--deepspeed_config_path", type=str, default="./deepspeed_config.json")

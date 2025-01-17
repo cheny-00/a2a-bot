@@ -9,7 +9,7 @@ from torch.multiprocessing import set_start_method
 from pytorch_lightning import Trainer
 import pytorch_lightning.callbacks as plc
 from pytorch_lightning.loggers import TensorBoardLogger
-from lightning.pytorch.strategies import DeepSpeedStrategy
+from pytorch_lightning.strategies import DeepSpeedStrategy
 try:
     from deepspeed.utils.zero_to_fp32 import get_fp32_state_dict_from_zero_checkpoint # type: ignore
 except:
@@ -64,6 +64,9 @@ def update_params(args, config):
     if "datasets" in config[task]:
         args.data_params["datasets"] = config[task]["datasets"]
         print(f"========= Use datasets: {args.data_params['datasets']} for task: {task} =========")
+    if "sampling_weights" in config[task]:
+        args.data_params["sampling_weights"] = config[task]["sampling_weights"]
+        print(f"========= Use sampling_weights: {args.data_params['sampling_weights']} for task: {task} =========")
     if "train_data_dir" not in args.data_params:
         if "train_data_dir" not in config[task]:
             raise ValueError(f"train_data_dir not found in config for task: {task}")
@@ -109,11 +112,12 @@ def main(args):
     #     update_deepspeed_config(deepspeed_config, args.train_params)
     #     strategy = DeepSpeedStrategy(config=deepspeed_config)
     if args.deepspeed:
-        print("========= Use deepspeed strategy: deepspeed_stage_2 =========")
         args.pl_trainer_params.pop("gradient_clip_val", None)
         args.pl_trainer_params.pop("gradient_clip_algorithm", None)
-        strategy = "deepspeed_stage_2"
+        # strategy = DeepSpeedStrategy(config=args.deepspeed_config_path)
+        strategy = DeepSpeedStrategy(stage=2, zero_optimization=True, overlap_comm=True, contiguous_gradients=True)
     
+        print(f"========= Use deepspeed strategy: {strategy} =========")
     
     if args.resume_from_checkpoint:
         print(f"========= Resume from checkpoint: {args.resume_from_checkpoint} =========")
@@ -144,7 +148,8 @@ def main(args):
         args.pl_trainer_params["callbacks"] = load_callbacks(args.model_name, logger.version, task)
         args.pl_trainer_params["logger"] = logger
     
-    trainer = Trainer(**args.pl_trainer_params, strategy=strategy)
+    
+    trainer = Trainer(**args.pl_trainer_params, strategy=strategy, fast_dev_run=args.fast_dev_run)
     assert int(args.infer_params["infer"]) + int(args.infer_params["infer_once"]) < 2, "Only one of infer or single_infer can be True"
 
     if args.infer_params["infer"]:

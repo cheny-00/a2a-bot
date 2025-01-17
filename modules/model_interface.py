@@ -172,7 +172,7 @@ class ModelInterface(pl.LightningModule):
             elif metric_name.endswith("_wer"):
                 metric = WordErrorRate()
             elif metric_name.endswith("_perplexity"):
-                metric = torchmetrics.Perplexity(ignore_index=-100) #TODO modify the ignore_index
+                metric = torchmetrics.text.Perplexity(ignore_index=-100) #TODO modify the ignore_index
             self.__setattr__(metric_name, metric)
     
     
