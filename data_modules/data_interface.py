@@ -101,14 +101,19 @@ class DataInterface(pl.LightningDataModule):
             self.test_set = ConcatDataset(self.test_sets)
 
     def train_dataloader(self):
-        # Calculate sampling weights if not provided
-        if self.sampling_weights is None and len(self.sampling_weights) == len(self.train_sets):
+        # Calculate sampling weights
+        if self.sampling_weights is None:
             # Equal probability for each dataset
-            weights = [1.0/len(self.train_sets)] * len(self.train_set)
+            dataset_weights = [1.0/len(self.train_sets)] * len(self.train_sets)
         else:
             # Use provided sampling weights
             total_weight = sum(self.sampling_weights)
-            weights = [w/total_weight for w in self.sampling_weights]
+            dataset_weights = [w/total_weight for w in self.sampling_weights]
+
+        # Create per-sample weights based on dataset weights
+        weights = []
+        for dataset_idx, dataset in enumerate(self.train_sets):
+            weights.extend([dataset_weights[dataset_idx]] * len(dataset))
 
         # Create weighted sampler
         sampler = WeightedRandomSampler(

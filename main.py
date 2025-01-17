@@ -174,6 +174,7 @@ if __name__ == "__main__":
     args = get_args()
     if torch.cuda.is_available(): 
         try:
+            torch.set_float32_matmul_precision('medium')
             set_start_method("spawn")
         except RuntimeError:
             pass
